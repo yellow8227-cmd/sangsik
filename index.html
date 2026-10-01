@@ -4529,4 +4529,20 @@ $("#chips").onclick=e=>{const b=e.target.closest(".chip");if(!b)return;st.cat=b.
 if(!CATS.includes(st.cat))st.cat="전체";
 setMode(["card","quiz","wrong","sheet","mock","essay","study","game"].includes(st.mode)?st.mode:"study");
 </script>
-<script src="login.js?v=1790862607389"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
+<script id="export-old">
+// Claude 안 버전 등 로그인 기능이 없는 곳: 기록을 코드로 내보내서 새 앱(깡깡이 상식)으로 옮긴다
+setTimeout(()=>{if(window.KK)return;const h=document.querySelector("header");if(!h)return;
+  const b=document.createElement("button");b.textContent="📤 이 기록을 새 앱으로 옮기기";b.style.cssText="display:inline-block;margin:8px 0 0;font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;border:1px solid #ccd;background:#fff;color:#1b2440;cursor:pointer";h.appendChild(b);
+  b.onclick=async()=>{const d={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith("studioS.")&&k!=="studioS.snd")d[k]=localStorage.getItem(k)}
+    const txt=JSON.stringify({t:Date.now(),d});let code;
+    try{const buf=await new Response(new Blob([txt]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer();const u=new Uint8Array(buf);let s="";for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));code="KKSS1:z"+btoa(s)}
+    catch(e){code="KKSS1:j"+btoa(unescape(encodeURIComponent(txt)))}
+    const w=document.createElement("div");w.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:99;padding:16px";
+    w.innerHTML='<div style="background:#fff;color:#1b2440;border-radius:12px;padding:20px;max-width:380px;width:100%"><h3 style="margin:0 0 6px">기록 옮기기 코드</h3><p style="font-size:13px;line-height:1.55;margin:0 0 10px">아래 코드를 <b>전체 복사</b>해서 카톡 나와의 채팅에 보내 두세요. 새 앱(yellow8227-cmd.github.io/sangsik)에서 🔑 버튼 → <b>로그인 없이 코드로 옮기기</b> → ② 칸에 붙여 넣고 <b>기록 받기</b>를 누르면 합쳐져요.</p><textarea readonly style="width:100%;box-sizing:border-box;height:110px;font:12px monospace;padding:8px;border:1px solid #ccd;border-radius:8px"></textarea><div style="display:flex;gap:8px;margin-top:8px"><button id="eocp" style="font:inherit;padding:10px 14px;border-radius:8px;border:0;background:#1b2440;color:#fff">복사</button><button id="eox" style="font:inherit;padding:10px 14px;border-radius:8px;border:1px solid #ccd;background:none">닫기</button></div><div id="eom" style="font-size:13px;color:#1f8a4c;margin-top:6px"></div></div>';
+    document.body.appendChild(w);const ta=w.querySelector("textarea");ta.value=code;ta.onclick=()=>ta.select();
+    w.querySelector("#eox").onclick=()=>w.remove();
+    w.querySelector("#eocp").onclick=async()=>{ta.select();let ok=false;try{await navigator.clipboard.writeText(code);ok=true}catch(e){try{ok=document.execCommand("copy")}catch(e2){}}
+      w.querySelector("#eom").textContent=ok?"복사했어요! 카톡 나와의 채팅에 붙여 넣어 두세요.":"자동 복사가 막혀 있어요. 칸을 길게 눌러 전체 선택 → 복사하세요."}};
+},800);
+</script>
+<script src="login.js?v=1790862649965"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
