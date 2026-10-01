@@ -90,6 +90,7 @@ footer{font-size:12px;color:var(--muted)}
 .pq-q{font-weight:700;line-height:1.6;white-space:pre-line;word-break:keep-all}
 .pq-n{font-family:var(--mono);color:var(--omr)}
 .pq-o{display:flex;flex-direction:column;gap:4px}
+.omr{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 18px;margin:12px 0}.omr-r{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px dashed var(--line,#ddd)}.omr-n{min-width:2.2em;font-weight:700;text-align:right}.omr-b{font:inherit;font-size:20px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line,#ccc);background:none;color:var(--ink);cursor:pointer}.omr-b.on{background:#d9344f;border-color:#d9344f;color:#fff}.omr-in{flex:1;min-width:0;font:inherit;padding:8px;border:1px solid var(--line,#ccc);border-radius:6px;background:none;color:var(--ink)}.xgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:8px;margin:12px 0}.xb{font:inherit;font-weight:700;height:52px;border-radius:8px;border:1px solid var(--line,#ccc);background:none;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center}.xb small{font-size:10px;font-weight:400;opacity:.7}.xb.on{background:#d9344f;border-color:#d9344f;color:#fff}.srctag{display:inline-block;font-size:12px;padding:1px 6px;margin:0 4px;border-radius:4px;background:#ffe46b;color:#1b2440;vertical-align:middle}.ptabs{margin:10px 0 4px}
 .pqo{font:inherit;text-align:left;display:flex;gap:10px;align-items:flex-start;background:none;border:1px solid transparent;border-radius:6px;padding:6px 8px;color:var(--ink);cursor:pointer}
 .pqo .c{flex:none;color:var(--muted);font-size:17px;line-height:1.3}
 .pqo.on{border-color:var(--omr);background:var(--omr-soft)}
@@ -1466,24 +1467,28 @@ function renderMock(){
       <section class="sheet-intro"><div class="ticket">1교시 · 공통상식</div>
       <p><b>실전 모드</b>는 힌트 없이 시험처럼, <b>연습 모드</b>는 문제마다 힌트(초성, 틀린 보기 지우기)를 쓸 수 있어요. 처음 푸는 세트는 연습 모드로 풀고, 다시 풀 때 실전 모드로 도전해 보세요. 세트마다 문항 수와 제한시간이 달라요(대부분 40문항·60분). 상식이 처음이면 <b>범위 공부 먼저</b>를 눌러 그 세트 내용을 읽고 푸세요. 채점은 제출한 뒤에 한 번에 하고, 문항마다 정답과 해설을 보여 줍니다. 실제 시험처럼 중간에 답을 확인하지 말고 끝까지 풀어 보세요.</p></section>
       ${pdfBox(["q","a","q14","a14"])}
+      ${wrongPoolCard()}
       ${EXAMS.map((e,k)=>{const r=mk["r"+k],d=mk["d"+k];
         return `<section class="setcard"><div><div class="set-t">${esc(e.title)}</div><div class="hint">${esc(e.sub)} · ${e.qs.length}문항 · ${e.min}분</div>
         ${r?`<div class="hint">최근 점수 <b>${r.score}점</b> (${r.right}/${r.total})</div>`:""}</div>
-        <div class="row">${d?`<button class="btn primary" data-start="${k}">이어 풀기</button>`:`<button class="btn primary" data-start="${k}">실전 모드</button><button class="btn hintbtn" data-start="${k}" data-practice="1">연습 모드 (힌트)</button>`}${d?"":`<button class="btn" data-studyset="${k}">범위 공부 먼저</button>`}${r?`<button class="btn" data-review="${k}">채점 결과</button>`:""}</div></section>`}).join("")}
+        <div class="row">${d?`<button class="btn primary" data-start="${k}">이어 풀기</button>`:`<button class="btn primary" data-start="${k}">실전 모드</button><button class="btn hintbtn" data-start="${k}" data-practice="1">연습 모드 (힌트)</button>`}${d?"":`<button class="btn" data-studyset="${k}">범위 공부 먼저</button>`}${d?"":`<button class="btn paperbtn" data-paper="${k}">종이로 푼 답 입력</button>`}${r?`<button class="btn" data-review="${k}">채점 결과</button>`:""}</div></section>`}).join("")}
     </div>`;
     bindPdf();
     document.querySelectorAll("[data-start]").forEach(b=>b.onclick=()=>startExam(+b.dataset.start,!!b.dataset.practice));
+    document.querySelectorAll("[data-paper]").forEach(b=>b.onclick=()=>startPaper(+b.dataset.paper));
+    if($("#wpool"))$("#wpool").onclick=startWrongPool;
     document.querySelectorAll("[data-studyset]").forEach(b=>b.onclick=()=>{st.mode="study";save();studyCat=null;studySet=+b.dataset.studyset;render();window.scrollTo({top:0})});
     document.querySelectorAll("[data-review]").forEach(b=>b.onclick=()=>{const k=+b.dataset.review;ex={k,qs:examQs(k),ans:mk["r"+k].ans,done:true,self:mk["r"+k].self||{},only:false};renderMock()});
     return;
   }
+  if(ex.paper)return renderPaper();
   if(ex.done)return renderResult();
-  const e=EXAMS[ex.k];
+  const e=ex.sub?{title:ex.title}:EXAMS[ex.k];
   const answered=ex.qs.filter((q,i)=>ex.ans[i]!==undefined&&ex.ans[i]!=="").length;
   $("#stage").innerHTML=`<div class="paper">
     <div class="paper-head"><div><div class="ticket">1교시 공통상식${ex.practice?" · 연습 모드":""}</div><div class="set-t">${esc(e.title)}</div></div>
       <div class="hint">${(()=>{const m=ex.qs.filter(q=>q.t==="mc").length,n=ex.qs.length;return m===n?`객관식 1~${n}번: 알맞은 번호를 고르세요.`:`객관식 1~${m}번은 알맞은 번호를 고르고, 단답형 ${m+1}~${n}번은 답을 적으세요.`})()}</div></div>
-    ${ex.qs.map((q,i)=>`<div class="pq" id="pq${i}">${ex.practice&&typeof whenTag==="function"?whenTag(q.q,q.t==="mc"?q.opts[q.ans]:q.a[0]):""}<div class="pq-q"><span class="pq-n">${i+1}.</span> ${esc(q.q)}${q.t==="sa"?' <span class="tag">단답형</span>':""}</div>${q.img?`<img class="qimg" src="${q.img}" alt="문제 그림" loading="lazy">`:""}
+    ${ex.qs.map((q,i)=>`<div class="pq" id="pq${i}">${ex.practice&&typeof whenTag==="function"?whenTag(q.q,q.t==="mc"?q.opts[q.ans]:q.a[0]):""}<div class="pq-q">${qn(i)} ${esc(q.q)}${q.t==="sa"?' <span class="tag">단답형</span>':""}</div>${q.img?`<img class="qimg" src="${q.img}" alt="문제 그림" loading="lazy">`:""}
       ${q.t==="mc"?`<div class="pq-o">${q.opts.map((o,j)=>`<button class="pqo ${ex.ans[i]===j?"on":""} ${(ex.hint[i]||[]).includes&&(ex.hint[i]||[]).includes(j)?"gone":""}" data-i="${i}" data-j="${j}"><span class="c">${CIRC[j]}</span><span>${esc(dispOpts(q.opts)[j])}</span></button>`).join("")}</div>${ex.practice&&!ex.hint[i]?`<button class="btn small hintbtn" data-h="${i}">힌트: 틀린 보기 2개 지우기</button>`:""}`
       :`<input class="pq-in" id="sa${i}" data-i="${i}" value="${esc(ex.ans[i]||"")}" autocomplete="off" placeholder="답 입력">${ex.practice?(ex.hint[i]?hintBox(q.a[0],ex.hint[i]):"")+(!ex.hint[i]||ex.hint[i]<2?`<button class="btn small hintbtn" data-h="${i}">${ex.hint[i]?"힌트 더 보기 (첫 글자)":"힌트 (초성)"}</button>`:""):""}`}</div>`).join("")}
     <div class="submitbox" id="subbox"><button class="btn primary" id="sub1">답안 제출</button></div>
@@ -1504,7 +1509,7 @@ function renderMock(){
 }
 function countAns(){return ex.ans.filter(a=>a!==undefined&&a!==null&&a!=="").length}
 function updCnt(){const c=$("#cnt");if(c)c.textContent=countAns()}
-function persistExam(){mk["d"+ex.k]={ans:ex.ans,end:ex.end,practice:ex.practice,hint:ex.hint};mkSave()}
+function persistExam(){if(ex.sub)return;mk["d"+ex.k]={ans:ex.ans,end:ex.end,practice:ex.practice,hint:ex.hint};mkSave()}
 function startExam(k,practice){
   const d=mk["d"+k];
   ex={k,qs:examQs(k),ans:d?d.ans:[],end:d&&d.end>Date.now()?d.end:Date.now()+EXAMS[k].min*60000,done:false,self:{},only:false,practice:d?!!d.practice:!!practice,hint:d&&d.hint||{}};
@@ -1516,14 +1521,17 @@ function isRight(q,i){const a=ex.ans[i];
   const n=norm(a);return !!n&&q.a.some(x=>norm(x)===n);}
 function grade(){
   clearInterval(exTimer);ex.done=true;
-  delete mk["d"+ex.k];saveResult();renderMock();window.scrollTo({top:0});
+  if(!ex.sub)delete mk["d"+ex.k];saveResult();renderMock();window.scrollTo({top:0});
 }
 function saveResult(){
+  mk.fix=mk.fix||{};
+  if(ex.sub){ex.qs.forEach((q,i)=>{if(isRight(q,i))mk.fix[ex.src[i]]=1;else delete mk.fix[ex.src[i]]});mkSave();return}
+  Object.keys(mk.fix).forEach(key=>{if(key.split(":")[0]===String(ex.k))delete mk.fix[key]});
   const right=ex.qs.filter((q,i)=>isRight(q,i)).length;
   mk["r"+ex.k]={ans:ex.ans,self:ex.self,right,total:ex.qs.length,score:Math.round(right/ex.qs.length*100)};mkSave();
 }
 function renderResult(){
-  const e=EXAMS[ex.k];
+  const e=ex.sub?{title:ex.title}:EXAMS[ex.k];
   const res=ex.qs.map((q,i)=>isRight(q,i));
   const right=res.filter(Boolean).length,score=Math.round(right/ex.qs.length*100);
   const mcR=ex.qs.filter((q,i)=>q.t==="mc"&&res[i]).length,saR=right-mcR;
@@ -1532,11 +1540,11 @@ function renderResult(){
     <div class="score">${score}<small>점</small></div>
     <div class="hint">객관식 ${mcR}/${ex.qs.filter(q=>q.t==="mc").length} · 단답형 ${saR}/${ex.qs.filter(q=>q.t==="sa").length} · 전체 ${right}/${ex.qs.length}${ex.practice?` · 연습 모드(힌트 ${Object.keys(ex.hint||{}).length}번 사용)`:""}</div>
     <div class="x">${score>=80?"합격권 점수예요. 틀린 문제만 다시 보고 다음 세트로 넘어가세요.":score>=60?"조금만 더 올리면 됩니다. 틀린 문제의 해설을 읽고 암기카드로 다시 외워 보세요.":"해설을 꼼꼼히 읽고 같은 세트를 한 번 더 풀어 보세요."}</div>
-    <div class="row"><button class="btn primary" id="retry">다시 풀기</button><button class="btn" id="only">${ex.only?"전체 보기":"틀린 문제만 보기"}</button><button class="btn" id="back">세트 목록</button></div></section>
+    <div class="row">${res.some(x=>!x)?`<button class="btn primary" id="rwrong">틀린 문제만 다시 풀기 (${res.filter(x=>!x).length})</button>`:""}<button class="btn${res.some(x=>!x)?"":" primary"}" id="retry">${ex.sub?"이 문제들 다시 풀기":"전체 다시 풀기"}</button><button class="btn" id="only">${ex.only?"전체 보기":"틀린 문제만 보기"}</button><button class="btn" id="back">세트 목록</button></div></section>
    ${ex.qs.map((q,i)=>{if(ex.only&&res[i])return "";const a=ex.ans[i];
      const mine=q.t==="mc"?(a===undefined||a===null?"미표기":CIRC[a]+" "+q.opts[a]):(a||"미기입");
      const cor=q.t==="mc"?CIRC[q.ans]+" "+q.opts[q.ans]:q.a[0];
-     return `<section class="rv ${res[i]?"ok":"ng"}">${typeof whenTag==="function"?whenTag(q.q,q.t==="mc"?q.opts[q.ans]:q.a[0]):""}<div class="pq-q"><span class="pq-n">${i+1}.</span> ${esc(q.q)}</div>${q.img?`<img class="qimg small" src="${q.img}" alt="문제 그림" loading="lazy">`:""}
+     return `<section class="rv ${res[i]?"ok":"ng"}">${typeof whenTag==="function"?whenTag(q.q,q.t==="mc"?q.opts[q.ans]:q.a[0]):""}<div class="pq-q">${qn(i)} ${esc(q.q)}</div>${q.img?`<img class="qimg small" src="${q.img}" alt="문제 그림" loading="lazy">`:""}
       <div class="rv-row"><span class="mark">${res[i]?"O":"X"}</span><span>내 답: ${esc(mine)}</span></div>
       ${res[i]?"":`<div class="rv-row"><span class="mark ok">정답</span><span><b>${esc(cor)}</b></span></div>`}
       ${q.t==="mc"&&!res[i]&&typeof a==="number"?pickNote(q.q,q.opts[a],q.opts[q.ans]):""}
@@ -1549,7 +1557,8 @@ function renderResult(){
       ${!res[i]&&sampleFn?`<button class="btn small" data-easy="${i}">쉽게 설명해 줘</button><div class="easy" id="easy${i}" hidden></div>`:""}
       ${!res[i]&&sampleFn&&!q.img?`<button class="btn small" data-sim="${i}">비슷한 문제 5개 만들기</button><div class="simbox" id="sim${i}" hidden></div>`:""}</section>`}).join("")}
   </div>`;
-  $("#retry").onclick=()=>{delete mk["d"+ex.k];const k=ex.k,pr=ex.practice;ex=null;startExam(k,pr)};
+  $("#retry").onclick=()=>{if(ex.sub){startSub(ex.src,ex.title);return}delete mk["d"+ex.k];const k=ex.k,pr=ex.practice;ex=null;startExam(k,pr)};
+  if($("#rwrong"))$("#rwrong").onclick=()=>{const src=ex.qs.map((q,i)=>i).filter(i=>!res[i]).map(i=>ex.sub?ex.src[i]:ex.k+":"+i);startSub(src,(ex.sub?"오답 다시 풀기":EXAMS[ex.k].title+" 오답")+" · "+src.length+"문항")};
   $("#only").onclick=()=>{ex.only=!ex.only;renderMock()};
   $("#back").onclick=()=>{ex=null;renderMock();window.scrollTo({top:0})};
   document.querySelectorAll("[data-self]").forEach(b=>b.onclick=()=>{ex.self[+b.dataset.self]=true;saveResult();renderMock()});
@@ -1558,6 +1567,51 @@ function renderResult(){
   document.querySelectorAll("[data-easy]").forEach(b=>b.onclick=()=>{const q=ex.qs[+b.dataset.easy];explainEasy(q.q,q.t==="mc"?q.opts[q.ans]:q.a[0],q.x,$("#easy"+b.dataset.easy),b)});
 }
 
+// ───── 종이로 푼 답 입력 · 오답 다시 풀기
+const qsCache={};
+function qsOf(k){return qsCache[k]||(qsCache[k]=examQs(k))}
+function qn(i){if(!ex||!ex.sub)return `<span class="pq-n">${i+1}.</span>`;const [k,j]=ex.src[i].split(":").map(Number);
+  return `<span class="pq-n">${i+1}.</span><span class="srctag">${esc(EXAMS[k].title)} ${j+1}번</span> `}
+function wasRight(q,a,self,i){if(self&&self[i])return true;if(q.t==="mc")return a===q.ans;const n=norm(a);return !!n&&q.a.some(x=>norm(x)===n)}
+function wrongPool(){const out=[],fix=mk.fix||{};
+  EXAMS.forEach((e,k)=>{const r=mk["r"+k];if(!r)return;qsOf(k).forEach((q,i)=>{if(!wasRight(q,(r.ans||[])[i],r.self,i)&&!fix[k+":"+i])out.push(k+":"+i)})});return out}
+function wrongPoolCard(){const p=wrongPool();
+  const sets=new Set(p.map(x=>x.split(":")[0])).size;
+  return `<section class="setcard wpool"><div><div class="tag">오답 모음</div><div class="set-t">틀린 문제만 모아 다시 풀기</div>
+   <div class="hint">${p.length?`채점한 세트 ${sets}개에서 아직 못 맞힌 문제 <b>${p.length}문항</b>. 다시 풀어 맞히면 목록에서 빠져요.`:"아직 모인 오답이 없어요. 앱에서 풀거나, 종이로 푼 세트는 <b>종이로 푼 답 입력</b>으로 채점하면 틀린 문제가 여기 모여요."}</div></div>
+   ${p.length?`<div class="row"><button class="btn primary" id="wpool">오답 다시 풀기${p.length>40?" (40문항씩)":""}</button></div>`:""}</section>`}
+function startWrongPool(){const p=shuffle(wrongPool().slice()).slice(0,40);if(!p.length)return;startSub(p,"오답 모아 다시 풀기 · "+p.length+"문항")}
+function startSub(src,title){clearInterval(exTimer);
+  const qs=src.map(s=>{const [k,i]=s.split(":").map(Number);return qsOf(k)[i]});
+  ex={k:"sub",sub:true,src,title,qs,ans:[],end:Date.now()+Math.max(5,Math.ceil(qs.length*1.5))*60000,done:false,self:{},only:false,practice:false,hint:{}};
+  renderMock();window.scrollTo({top:0})}
+function startPaper(k){clearInterval(exTimer);const d=mk["p"+k]||{};
+  ex={k,paper:true,pm:d.pm||"omr",qs:qsOf(k),ans:d.ans||[],xs:d.xs||{},self:{},only:true,practice:false,hint:{},done:false};
+  renderMock();window.scrollTo({top:0})}
+function savePaper(){mk["p"+ex.k]={pm:ex.pm,ans:ex.ans,xs:ex.xs};mkSave()}
+function renderPaper(){const e=EXAMS[ex.k],omr=ex.pm==="omr";
+  const filled=omr?ex.ans.filter(a=>a!==undefined&&a!==null&&a!=="").length:Object.keys(ex.xs).length;
+  $("#stage").innerHTML=`<div class="paper">
+   <div class="paper-head"><div><div class="ticket">종이로 푼 답 입력</div><div class="set-t">${esc(e.title)}</div></div>
+    <div class="hint">인쇄한 문제지와 문제 번호·보기 번호가 똑같아요. 입력하면 바로 채점하고, 틀린 문제는 오답 모음에 들어가 앱에서 다시 풀 수 있어요.</div></div>
+   <div class="row ptabs"><button class="btn ${omr?"primary":""}" data-pm="omr">내 답 번호 입력</button><button class="btn ${omr?"":"primary"}" data-pm="x">틀린 번호만 체크</button></div>
+   <div class="hint">${omr?"문항마다 내가 고른 번호를 누르세요. 단답형은 쓴 답을 그대로 적으세요. 비워 두면 틀린 것으로 채점해요.":"해설지로 이미 채점했다면, 틀린 문제 번호만 눌러 표시하세요. 나머지는 맞힌 것으로 기록해요."}</div>
+   ${omr?`<div class="omr">${ex.qs.map((q,i)=>`<div class="omr-r"><span class="omr-n">${i+1}</span>${q.t==="mc"?q.opts.map((o,j)=>`<button class="omr-b ${ex.ans[i]===j?"on":""}" data-i="${i}" data-j="${j}">${CIRC[j]}</button>`).join(""):`<input class="omr-in" data-i="${i}" value="${esc(ex.ans[i]||"")}" placeholder="단답형 답" autocomplete="off">`}</div>`).join("")}</div>`
+   :`<div class="xgrid">${ex.qs.map((q,i)=>`<button class="xb ${ex.xs[i]?"on":""}" data-x="${i}">${i+1}${q.t==="sa"?"<small>단답</small>":""}</button>`).join("")}</div>`}
+   <div class="submitbox"><div class="hint">${omr?`입력 ${filled}/${ex.qs.length}`:`틀린 문제 ${filled}개 표시`}</div>
+    <div class="row"><button class="btn primary" id="pgrade">채점하고 오답 저장</button><button class="btn" id="pcancel">나가기</button></div></div>
+  </div>`;
+  document.querySelectorAll("[data-pm]").forEach(b=>b.onclick=()=>{ex.pm=b.dataset.pm;savePaper();renderPaper()});
+  document.querySelectorAll(".omr-b").forEach(b=>b.onclick=()=>{const i=+b.dataset.i,j=+b.dataset.j;ex.ans[i]=ex.ans[i]===j?null:j;
+    b.parentNode.querySelectorAll(".omr-b").forEach(x=>x.classList.toggle("on",+x.dataset.j===ex.ans[i]));savePaper()});
+  document.querySelectorAll(".omr-in").forEach(inp=>inp.oninput=()=>{ex.ans[+inp.dataset.i]=inp.value;savePaper()});
+  document.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{const i=+b.dataset.x;if(ex.xs[i])delete ex.xs[i];else ex.xs[i]=1;b.classList.toggle("on",!!ex.xs[i]);
+    const h=$(".submitbox .hint");if(h)h.textContent=`틀린 문제 ${Object.keys(ex.xs).length}개 표시`;savePaper()});
+  $("#pcancel").onclick=()=>{ex=null;renderMock();window.scrollTo({top:0})};
+  $("#pgrade").onclick=()=>{
+    if(ex.pm==="x")ex.ans=ex.qs.map((q,i)=>ex.xs[i]?(q.t==="mc"?null:""):(q.t==="mc"?q.ans:q.a[0]));
+    delete mk["p"+ex.k];ex.paper=false;ex.done=true;ex.only=true;saveResult();renderMock();window.scrollTo({top:0})};
+}
 // ───── 비슷한 문제 만들기 (Claude)
 async function makeSimilar(q,box,btn){
   if(!sampleFn)return;box.hidden=false;btn.disabled=true;box.innerHTML='<div class="hint">Claude가 비슷한 유형의 문제를 만들고 있어요… (20~40초)</div>';
