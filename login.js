@@ -1,13 +1,18 @@
-// 깡깡이 상식 · 아이디/비번 로그인으로 기록 이어 하기 (상식 전용 Supabase 프로젝트, 계정 메모칸 user_metadata.ss 에 저장)
+// 깡깡이 상식 · 아이디/비번 로그인으로 기록 이어 하기 (상식 전용 Supabase, ss_accounts 표를 함수(rpc)로만 드나든다 — sangsik-setup.sql)
 (function(){
 const SUPA_URL="https://ruvpsowkdbyxpfumpckw.supabase.co",SUPA_KEY="sb_publishable_nkVEVsyJcp1vC6k8JlgSQA_lUGRsOPr";
-const PFX="studioS.",META="sangsik.sync",DOM="@yellow8227-cmd.github.io",TAG="KKSS1:";
+const PFX="studioS.",META="sangsik.sync",ACCT="sangsik-acct",TAG="KKSS1:";
 const _set=Storage.prototype.setItem;
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{_set.call(localStorage,k,v)}catch(e){}};
 let meta={};try{meta=JSON.parse(lsGet(META)||"{}")}catch(e){}
 const saveMeta=()=>lsSet(META,JSON.stringify(meta));
-let sb=null,user=null,timer=null,ready=false;
+let user=null,timer=null,ready=false;
+async function api(fn,args){let r;
+  try{r=await fetch(SUPA_URL+"/rest/v1/rpc/"+fn,{method:"POST",headers:{apikey:SUPA_KEY,"Content-Type":"application/json"},body:JSON.stringify(args)})}catch(e){throw new Error("network")}
+  const txt=await r.text();let j=null;try{j=txt?JSON.parse(txt):null}catch(e){}
+  if(!r.ok)throw new Error(j&&j.message||("http "+r.status));return j}
+function setUser(u){user=u;try{if(u)_set.call(localStorage,ACCT,JSON.stringify(u));else localStorage.removeItem(ACCT)}catch(e){}paint();if(u){ready=false;pull()}}
 
 // ── 기록 → 짧은 코드 (카드 id 는 번호로 바꿔서 줄인다)
 function cardIndex(){if(cardIndex.m)return cardIndex.m;const m=new Map();
@@ -37,13 +42,13 @@ Storage.prototype.setItem=function(k,v){const mine=this===localStorage&&String(k
   const before=mine?this.getItem(k):null;_set.call(this,k,v);
   if(mine&&before!==String(v)){meta.t=Date.now();saveMeta();schedule()}};
 function schedule(){if(!user||!ready)return;clearTimeout(timer);timer=setTimeout(push,3000);paint("저장 중…")}
-async function push(){if(!user||!sb)return;clearTimeout(timer);
+async function push(){if(!user)return;clearTimeout(timer);
   try{const t=meta.t||Date.now();const code=await pack(t);
-    const r=await sb.auth.updateUser({data:{ss:code,ssat:t}});if(r.error)throw r.error;
-    meta.synced=t;meta.uid=user.id;saveMeta();paint()}catch(e){paint("저장 대기")}}
-async function remote(){const r=await sb.auth.getUser();if(r.error)throw r.error;const md=r.data.user&&r.data.user.user_metadata||{};return md.ss?{code:md.ss,t:md.ssat||0}:null}
+    await api("ss_save",{p_token:user.token,p_data:code,p_t:t});
+    meta.synced=t;meta.uid=user.id;saveMeta();paint()}catch(e){if(/bad_token/.test(e.message))return setUser(null);paint("저장 대기")}}
+async function remote(){const r=await api("ss_load",{p_token:user.token});return r&&r.data?{code:r.data,t:Number(r.t)||0}:null}
 async function pull(){
-  let rm;try{rm=await remote()}catch(e){ready=true;paint("오프라인");return}
+  let rm;try{rm=await remote()}catch(e){if(/bad_token/.test(e.message))return setUser(null);ready=true;paint("오프라인");return}
   ready=true;if(!rm){await push();return}
   const same=meta.uid===user.id,dirty=(meta.t||0)>(meta.synced||0),hasLocal=hasProgress();
   const take=async()=>{const o=await unpack(rm.code);applyData(o);meta.t=meta.synced=rm.t;meta.uid=user.id;saveMeta();location.reload()};
@@ -75,20 +80,18 @@ const css=document.createElement("style");css.textContent=`
 document.head.appendChild(css);
 const btn=document.createElement("button");btn.id="acct";
 (document.querySelector("header")||document.body).appendChild(btn);
-function paint(st){btn.classList.toggle("on",!!user);btn.textContent=user?("👤 "+String(user.email||"").replace(DOM,"")+" · "+(st||"자동 저장 중")):"🔑 로그인하고 폰·노트북 이어 하기"}
+function paint(st){btn.classList.toggle("on",!!user);btn.textContent=user?("👤 "+user.id+" · "+(st||"자동 저장 중")):"🔑 로그인하고 폰·노트북 이어 하기"}
 paint();
 btn.onclick=()=>user?account():login();
 function dlg(html){document.querySelectorAll("#acctdlg").forEach(x=>x.remove());const d=document.createElement("div");d.id="acctdlg";d.innerHTML=`<div class="box">${html}</div>`;d.onclick=e=>{if(e.target===d)d.remove()};document.body.appendChild(d);return d}
 const idOk=s=>/^[a-z0-9._-]{3,20}$/.test(s);
-function errMsg(e){const m=String(e&&(e.message||e.msg||e.error_description)||e||"");
-  if(/already registered|already exists/i.test(m))return "이미 있는 아이디예요. 로그인을 눌러 주세요.";
-  if(/Invalid login credentials/i.test(m))return "아이디나 비밀번호가 맞지 않아요. 처음이면 '가입'을 눌러 주세요.";
-  if(/Email not confirmed/i.test(m))return "서버에서 이메일 확인을 요구하고 있어요. 만든 사람에게 알려 주세요 (Confirm email 설정).";
-  if(/rate limit|too many/i.test(m))return "잠시 후 다시 시도해 주세요.";
-  if(/Password should be/i.test(m))return "비밀번호를 6자 이상으로 해 주세요.";
-  if(/signups? (not allowed|disabled)/i.test(m))return "지금은 새 가입이 막혀 있어요 (서버 설정).";
-  if(/Email address .* is invalid/i.test(m))return "서버가 아이디 형식을 거절했어요. 화면을 캡처해서 만든 사람에게 보내 주세요.";
-  if(/fetch|network|Failed to/i.test(m))return "인터넷 연결을 확인해 주세요.";
+function errMsg(e){const m=String(e&&e.message||e||"");
+  if(/id_taken/.test(m))return "이미 있는 아이디예요. 내 아이디면 '로그인'을, 처음이면 다른 아이디를 써 주세요.";
+  if(/bad_login/.test(m))return "아이디나 비밀번호가 맞지 않아요. 처음이면 '가입'을 눌러 주세요.";
+  if(/bad_id/.test(m))return "아이디는 영문 소문자·숫자 3~20자로 써 주세요.";
+  if(/bad_pw/.test(m))return "비밀번호는 6~72자로 해 주세요.";
+  if(/network/.test(m))return "인터넷 연결을 확인해 주세요.";
+  if(/Could not find the function|PGRST202|404/.test(m))return "서버 준비가 아직 안 됐어요 (SQL 설정 필요). 만든 사람에게 알려 주세요.";
   return "로그인하지 못했어요: "+m.slice(0,80)}
 function login(){
   const d=dlg(`<h3>로그인</h3><p>아이디·비밀번호만 정하면 돼요. 폰이든 노트북이든 같은 아이디로 로그인하면 점수·오답·외운 카드·작문이 그대로 이어져요. 로그인하지 않아도 지금처럼 쓸 수 있어요.</p>
@@ -102,17 +105,13 @@ function login(){
     if(!idOk(id)){er.textContent="아이디는 영문 소문자·숫자 3~20자로 써 주세요.";return}
     if(pw.length<6){er.textContent="비밀번호는 6자 이상이에요.";return}
     er.textContent=up?"가입하는 중…":"로그인 중…";
-    try{await boot();
-      const r=up?await sb.auth.signUp({email:id+DOM,password:pw}):await sb.auth.signInWithPassword({email:id+DOM,password:pw});
-      if(r.error)throw r.error;
-      if(!r.data.session){er.textContent="가입은 됐지만 서버가 이메일 확인을 기다리고 있어요. 만든 사람에게 알려 주세요 (Supabase → Authentication → Email → Confirm email 끄기).";return}
-      d.remove()}catch(e){er.textContent=errMsg(e)}};
+    try{const tok=await api(up?"ss_signup":"ss_login",{p_id:id,p_pw:pw});d.remove();setUser({id,token:tok})}catch(e){er.textContent=errMsg(e)}};
   d.querySelector("#ain").onclick=()=>go(false);d.querySelector("#aup").onclick=()=>go(true);d.querySelector("#ax").onclick=()=>d.remove();
   d.querySelector("#apw").onkeydown=e=>{if(e.key==="Enter")go(false)};
   d.querySelector("#axfer").onclick=xfer;
 }
 function account(){
-  const d=dlg(`<h3>👤 ${String(user.email||"").replace(DOM,"")}</h3><p>푼 기록이 이 아이디에 자동 저장돼요. 다른 기기에서도 같은 아이디로 로그인하면 이어서 할 수 있어요.${meta.synced?"<br>마지막 저장: "+new Date(meta.synced).toLocaleString("ko-KR"):""}</p>
+  const d=dlg(`<h3>👤 ${user.id}</h3><p>푼 기록이 이 아이디에 자동 저장돼요. 다른 기기에서도 같은 아이디로 로그인하면 이어서 할 수 있어요.${meta.synced?"<br>마지막 저장: "+new Date(meta.synced).toLocaleString("ko-KR"):""}</p>
    <div class="err" id="amsg"></div>
    <div class="r"><button class="p" id="anow">지금 저장</button><button id="aget">저장된 기록 불러오기</button></div>
    <div class="r"><button id="aout">로그아웃</button><button id="ax">닫기</button></div>`);
@@ -121,7 +120,7 @@ function account(){
   d.querySelector("#aget").onclick=async()=>{try{const rm=await remote();if(!rm){msg.textContent="아직 저장된 기록이 없어요.";return}
     if(!confirm(new Date(rm.t).toLocaleString("ko-KR")+"에 저장된 기록으로 이 기기 기록을 바꿀까요?"))return;
     applyData(await unpack(rm.code));meta.t=meta.synced=rm.t;meta.uid=user.id;saveMeta();location.reload()}catch(e){msg.textContent=errMsg(e)}};
-  d.querySelector("#aout").onclick=async()=>{if((meta.t||0)>(meta.synced||0))await push();await sb.auth.signOut();d.remove()};
+  d.querySelector("#aout").onclick=async()=>{if((meta.t||0)>(meta.synced||0))await push();api("ss_logout",{p_token:user.token}).catch(()=>{});d.remove();setUser(null)};
   d.querySelector("#ax").onclick=()=>d.remove();
 }
 function xfer(){
@@ -137,14 +136,5 @@ function xfer(){
   d.querySelector("#xget").onclick=async()=>{let o;try{o=await unpack(d.querySelector("#xin").value)}catch(e){m2.textContent="코드가 올바르지 않아요. KKSS1:부터 끝까지 전부 붙여 넣었는지 확인하세요.";return}
     if(!confirm(new Date(o.t).toLocaleString("ko-KR")+"에 보낸 기록으로 이 기기 기록을 바꿀까요?"))return;applyData(o);meta.t=Date.now();saveMeta();location.reload()};
 }
-function load(src){return new Promise((ok,no)=>{const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
-let booting=null;
-function boot(){return booting||(booting=(async()=>{
-  if(!window.supabase)await load("sb/supabase.js");
-  sb=window.supabase.createClient(SUPA_URL,SUPA_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:"sangsik-auth"}});
-  sb.auth.onAuthStateChange((ev,ses)=>{const u=ses&&ses.user||null;const changed=(u&&u.id)!==(user&&user.id);user=u;paint();
-    if(changed){ready=false;if(u)setTimeout(pull,0)}});
-})().catch(e=>{booting=null;throw e}))}
-let hasSes=false;try{hasSes=!!lsGet("sangsik-auth")}catch(e){}
-if(hasSes)boot().catch(()=>paint());
+try{const a=JSON.parse(lsGet(ACCT)||"null");if(a&&a.id&&a.token)setUser(a)}catch(e){}
 })();
