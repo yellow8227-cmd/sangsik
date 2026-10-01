@@ -1,7 +1,7 @@
 // 깡깡이 상식 · 아이디/비번 로그인으로 기록 이어 하기 (상식 전용 Supabase 프로젝트, 계정 메모칸 user_metadata.ss 에 저장)
 (function(){
 const SUPA_URL="https://ruvpsowkdbyxpfumpckw.supabase.co",SUPA_KEY="sb_publishable_nkVEVsyJcp1vC6k8JlgSQA_lUGRsOPr";
-const PFX="studioS.",META="sangsik.sync",DOM="@sangsik.app",TAG="KKSS1:";
+const PFX="studioS.",META="sangsik.sync",DOM="@yellow8227-cmd.github.io",TAG="KKSS1:";
 const _set=Storage.prototype.setItem;
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{_set.call(localStorage,k,v)}catch(e){}};
@@ -87,6 +87,7 @@ function errMsg(e){const m=String(e&&(e.message||e.msg||e.error_description)||e|
   if(/rate limit|too many/i.test(m))return "잠시 후 다시 시도해 주세요.";
   if(/Password should be/i.test(m))return "비밀번호를 6자 이상으로 해 주세요.";
   if(/signups? (not allowed|disabled)/i.test(m))return "지금은 새 가입이 막혀 있어요 (서버 설정).";
+  if(/Email address .* is invalid/i.test(m))return "서버가 아이디 형식을 거절했어요. 화면을 캡처해서 만든 사람에게 보내 주세요.";
   if(/fetch|network|Failed to/i.test(m))return "인터넷 연결을 확인해 주세요.";
   return "로그인하지 못했어요: "+m.slice(0,80)}
 function login(){
