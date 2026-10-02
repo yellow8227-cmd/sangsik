@@ -234,7 +234,27 @@ details.primerx summary{color:var(--ok)}
 .cardopts{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px;font-size:16px}
 .cardopts li{padding:6px 10px;border:1px solid var(--line);border-radius:8px}
 .cardopts li.right{border-color:var(--ok);background:var(--ok-soft);font-weight:700}
-/*news-css*/.npaper{--serif:"Noto Serif KR","Nanum Myeongjo",Georgia,serif;background:var(--sheet);border:1.5px solid var(--ink);border-radius:10px;padding:18px 16px 22px;margin-bottom:80px}
+/*fb-css*/.afb{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.fb-st{font-weight:800;font-size:15px;padding:6px 12px;border-radius:999px;align-self:flex-start}
+.fb-st.ok{background:color-mix(in srgb,var(--ok) 16%,var(--sheet));color:var(--ok)}
+.fb-st.ng{background:color-mix(in srgb,var(--omr) 12%,var(--sheet));color:var(--omr)}
+.fb-ans{border:2px solid var(--ok);background:color-mix(in srgb,var(--ok) 9%,var(--sheet));border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.fb-k{font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--muted)}
+.fb-ans .fb-k{color:var(--ok)}
+.fb-a{font-size:20px;font-weight:800;color:var(--ok);line-height:1.35;word-break:keep-all}
+.fb-why{font-size:15.5px;line-height:1.65;word-break:keep-all}.fb-why b{color:var(--ok);margin-right:4px}
+.fb-mine{border-left:4px solid var(--omr);background:color-mix(in srgb,var(--omr) 6%,var(--sheet));border-radius:0 10px 10px 0;padding:9px 12px;display:flex;flex-direction:column;gap:4px;font-size:14px;line-height:1.6}
+.fb-mine .fb-k{color:var(--omr)}
+.fb-more{border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:14.5px;line-height:1.7}
+.fb-more summary{cursor:pointer;font-weight:700;color:var(--muted);padding:2px 0}
+.fb-more p{margin:6px 0;word-break:keep-all}
+.fb-row{display:flex;flex-direction:column;gap:2px;margin:8px 0;padding:6px 10px;border-radius:8px;background:var(--paper)}
+.fb-lab{font-size:12px;font-weight:800;color:var(--muted)}
+.fb-row.warn{background:color-mix(in srgb,var(--omr) 6%,var(--sheet))}.fb-row.warn .fb-lab{color:var(--omr)}
+.fb-row.memo{background:color-mix(in srgb,var(--mark) 45%,var(--sheet))}.fb-row.memo .fb-lab{color:var(--ink)}
+.fb-row.now{background:color-mix(in srgb,#3b6fd8 9%,var(--sheet))}.fb-row.now .fb-lab{color:#3b6fd8}
+.afb.compact .fb-a{font-size:17px}.afb.compact .fb-why{font-size:14.5px}
+/*fb-css-end*//*news-css*/.npaper{--serif:"Noto Serif KR","Nanum Myeongjo",Georgia,serif;background:var(--sheet);border:1.5px solid var(--ink);border-radius:10px;padding:18px 16px 22px;margin-bottom:80px}
 .nmast{text-align:center;border-bottom:3px double var(--ink);padding-bottom:10px;margin-bottom:12px}
 .nm-top{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:6px;gap:8px;flex-wrap:wrap}
 .nm-d{color:var(--omr);font-weight:700}
@@ -1589,10 +1609,7 @@ function renderResult(){
      const mine=q.t==="mc"?(a===undefined||a===null?"미표기":CIRC[a]+" "+q.opts[a]):(a||"미기입");
      const cor=q.t==="mc"?CIRC[q.ans]+" "+q.opts[q.ans]:q.a[0];
      return `<section class="rv ${res[i]?"ok":"ng"}">${typeof whenTag==="function"?whenTag(q.q,q.t==="mc"?q.opts[q.ans]:q.a[0]):""}<div class="pq-q">${qn(i)} ${esc(q.q)}</div>${q.img?`<img class="qimg small" src="${q.img}" alt="문제 그림" loading="lazy">`:""}
-      <div class="rv-row"><span class="mark">${res[i]?"O":"X"}</span><span>내 답: ${esc(mine)}</span></div>
-      ${res[i]?"":`<div class="rv-row"><span class="mark ok">정답</span><span><b>${esc(cor)}</b></span></div>`}
-      ${q.t==="mc"&&!res[i]&&typeof a==="number"?pickNote(q.q,q.opts[a],q.opts[q.ans]):""}
-      ${(()=>{const xx=typeof DX==="function"?DX(q.q,q.t==="mc"?q.opts[q.ans]:q.a[0],q.x):q.x;return xx?`<span class="lbl">해설</span><div class="x">${esc(xx)}</div>`:""})()}
+      ${fbBlock({ok:res[i],label:cor,ans:cor,mine:res[i]?null:(q.t==="mc"&&typeof a!=="number"?"번호 기록 없음":mine),mineNote:q.t==="mc"&&typeof a==="number"?WX(q.q,q.opts[a],q.opts[q.ans]):q.t==="mc"?"종이에서 '틀림'으로만 표시했거나 답을 고르지 않았어요. 위의 정답 이유를 먼저 보세요.":(a?"인정되는 정답과 달라요. 같은 뜻으로 맞게 썼다면 아래 '정답 처리' 버튼을 누르세요.":"답을 쓰지 않았어요."),x:DX(q.q,q.t==="mc"?q.opts[q.ans]:q.a[0],q.x),closed:res[i]})}
       ${typeof visLinks==="function"?visLinks(q.q,q.t==="mc"?q.opts[q.ans]:q.a[0]):""}
       ${typeof primerFor==="function"?primerFor(q.q,q.t==="mc"?q.opts[q.ans]:q.a[0]):""}
       ${q.t==="mc"&&typeof optList==="function"?optList(q.q,q.opts,q.opts[q.ans],typeof a==="number"?a:-1):""}
@@ -1618,7 +1635,7 @@ function addExamWrong(){const pool=wrongPool();if(!pool.length&&!justAdded)retur
   const order=Object.keys(bySet).map(Number).sort((a,b)=>justAdded&&a===justAdded.k?-1:justAdded&&b===justAdded.k?1:b-a);
   const item=(k,i)=>{const q=qsOf(k)[i],ans=q.t==="mc"?q.opts[q.ans]:q.a[0];const xx=typeof DX==="function"?DX(q.q,ans,q.x):q.x;
     return `<details class="ewq"><summary><span class="srctag">${i+1}번</span> ${esc(q.q)}</summary>${q.t==="mc"?`<ol class="cardopts">${q.opts.map((o,j)=>`<li class="${j===q.ans?"right":""}">${esc(o)}</li>`).join("")}</ol>`:""}
-      <div class="rv-row"><span class="mark ok">정답</span><span><b>${esc(ans)}</b></span></div>${xx?`<span class="lbl">해설</span><div class="x">${esc(xx)}</div>`:""}${typeof visLinks==="function"?visLinks(q.q,ans):""}</details>`};
+      ${fbBlock({ans,label:q.t==="mc"?CIRC[q.ans]+" "+ans:ans,x:xx})}${typeof visLinks==="function"?visLinks(q.q,ans):""}</details>`};
   const box=`<section class="card ewbox">${justAdded?`<div class="ewnew">✅ ${esc(EXAMS[justAdded.k].title)}에서 틀린 <b>${justAdded.n}문제</b>를 오답노트에 넣었어요.</div>`:""}
     <div class="meta"><span class="tag">모의고사 오답</span><span>${pool.length}문항</span></div>
     <div class="hint">문제를 누르면 정답과 해설이 보여요. <b>다시 풀기</b>로 풀어서 맞히면 여기서 빠져요.</div>
@@ -4703,7 +4720,7 @@ function chips(){
 function tabs(){document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===st.mode))}
 
 function answerBlock(d){
-  return `<div class="answer"><span class="lbl">정답</span><div class="a"><span>${esc(d[3])}</span></div>${DX(d[2],d[3],d[4])?`<span class="lbl">해설</span><div class="x">${esc(DX(d[2],d[3],d[4]))}</div>`:""}${primerFor(d[2],d[3])}${sampleFn?`<button class="btn small" id="easy">쉽게 설명해 줘</button><div class="easy" id="easyout" hidden></div>`:""}${visLinks(d[2],d[3])}</div>`;
+  return `<div class="answer">${fbBlock({ans:d[3],x:DX(d[2],d[3],d[4])})}${primerFor(d[2],d[3])}${sampleFn?`<button class="btn small" id="easy">쉽게 설명해 줘</button><div class="easy" id="easyout" hidden></div>`:""}${visLinks(d[2],d[3])}</div>`;
 }
 
 // 암기카드
@@ -4815,7 +4832,7 @@ function renderQuiz(){
     ${p===null&&!qz.elim?.[qz.i]?`<div class="row"><button class="btn hintbtn" id="fifty">힌트: 틀린 보기 2개 지우기</button></div>`:""}
     <div class="opts">${opts.map((o,k)=>{let c="";if(p!==null){if(o===d[3])c="right";else if(k===p)c="wrong"}else if(qz.elim?.[qz.i]?.includes(k))c="gone";
       return `<button class="opt ${c}" data-k="${k}" ${p!==null?"disabled":""}><span class="dot">${k+1}</span><span>${esc(p!==null&&o===d[3]?o:dispOpts(opts)[k])}</span></button>`}).join("")}</div>
-    ${p!==null?`${opts[p]!==d[3]?pickNote(d[2],opts[p],d[3]):""}<span class="lbl">정답 해설</span><div class="x">${esc(DX(d[2],d[3],d[4]))}</div>${visLinks(d[2],d[3])}${primerFor(d[2],d[3])}${optList(d[2],opts,d[3],p)}${sampleFn?`<button class="btn small" id="easy">쉽게 설명해 줘</button><div class="easy" id="easyout" hidden></div>`:""}<div class="row"><button class="btn primary" id="nq">다음 문제</button></div>`:""}
+    ${p!==null?`${fbBlock({ok:opts[p]===d[3],label:(opts.indexOf(d[3])+1)+"번 · "+d[3],ans:d[3],mine:opts[p]!==d[3]?(p+1)+"번 · "+opts[p]:null,mineNote:opts[p]!==d[3]?WX(d[2],opts[p],d[3]):"",x:DX(d[2],d[3],d[4])})}${visLinks(d[2],d[3])}${primerFor(d[2],d[3])}${optList(d[2],opts,d[3],p)}${sampleFn?`<button class="btn small" id="easy">쉽게 설명해 줘</button><div class="easy" id="easyout" hidden></div>`:""}<div class="row"><button class="btn primary" id="nq">다음 문제</button></div>`:""}
   </div>`;
   document.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
     const k=+b.dataset.k;qz.picked=k;
@@ -5112,7 +5129,7 @@ function renderSurvival(){
     <div class="progress timer"><i id="tbar" style="width:${g.left/12*100}%"></i></div>
     <div class="q">${esc(d[2])}</div>${d[7]?`<img class="qimg" src="${d[7]}" alt="문제 그림">`:""}
     <div class="opts">${opts.map((o,k)=>{let c="";if(p!==null){if(o===d[3])c="right";else if(k===p)c="wrong"}return `<button class="opt ${c}" data-k="${k}" ${p!==null?"disabled":""}><span class="dot">${k+1}</span><span>${esc(p!==null&&o===d[3]?o:dispOpts(opts)[k])}</span></button>`}).join("")}</div>
-    ${p!==null?`${p>=0&&opts[p]!==d[3]?pickNote(d[2],opts[p],d[3]):p===-1?`<div class="pick"><span class="lbl">시간 초과</span></div>`:""}<div class="x">${esc(DX(d[2],d[3],d[4]))}</div><div class="row"><button class="btn primary" id="gnext">다음</button></div>`:""}
+    ${p!==null?`${fbBlock({compact:1,ok:p>=0&&opts[p]===d[3],ans:d[3],mine:p>=0&&opts[p]!==d[3]?opts[p]:p===-1?"시간 초과":null,mineNote:p>=0&&opts[p]!==d[3]?WX(d[2],opts[p],d[3]):"시간 안에 고르지 못했어요.",x:DX(d[2],d[3],d[4])})}<div class="row"><button class="btn primary" id="gnext">다음</button></div>`:""}
     <div class="row"><button class="btn small" id="gquit">그만하기</button></div></div>`;
   const answer=k=>{clearInterval(gTimer);g.picked=k;
     if(k!==-1&&opts[k]===d[3]){g.combo++;g.score+=10*Math.min(g.combo,5)+Math.round(g.left)}else{g.combo=0;g.lives--;g.missed.push(d);if(!st.wrong.includes(id(d))){st.wrong.push(id(d));save()}}
@@ -5218,7 +5235,7 @@ function renderBoss(){const g=game,d=g.d,[bn,bg]=BOSSES[Math.min(g.stage,BOSSES.
     <div class="progress timer"><i id="tbar" style="width:${g.left/bossLimit()*100}%"></i></div>
     <div class="q">${esc(d[2])}</div>${d[7]?`<img class="qimg" src="${d[7]}" alt="문제 그림">`:""}
     <div class="opts">${g.opts.map((o,k)=>{let c="";if(g.state){if(o===d[3])c="right";else if(k===g.picked)c="wrong"}return `<button class="opt ${c}" data-k="${k}" ${g.state?"disabled":""}><span class="dot">${k+1}</span><span>${esc(dispOpts(g.opts)[k])}</span></button>`}).join("")}</div>
-    ${g.state==="miss"?`${g.picked>=0?pickNote(d[2],g.opts[g.picked],d[3]):`<div class="pick"><span class="lbl">시간 초과! 보스의 공격</span></div>`}<div class="x">${esc(DX(d[2],d[3],d[4]))}</div><div class="row"><button class="btn primary" id="bnext">${g.lives>0?"다시 싸우기":"결과 보기"}</button></div>`:""}
+    ${g.state==="miss"?`${fbBlock({compact:1,ok:false,ans:d[3],mine:g.picked>=0?g.opts[g.picked]:"시간 초과! 보스의 공격",mineNote:g.picked>=0?WX(d[2],g.opts[g.picked],d[3]):"시간 안에 고르지 못했어요.",x:DX(d[2],d[3],d[4])})}<div class="row"><button class="btn primary" id="bnext">${g.lives>0?"다시 싸우기":"결과 보기"}</button></div>`:""}
     <div class="row"><button class="btn small" id="gquit">도망가기</button></div></div>`;
   bindSnd(bgmStart);
   $("#gquit").onclick=()=>{g.lives=0;endBoss()};
@@ -5396,6 +5413,30 @@ const WX=(q,o,a)=>{const W0=window.WRONG||{},w=W0[q+"|"+a]||W0[q];if(w&&w[o])ret
   const F=(window.OPTFIX||{})[q+"|"+a];if(F)for(const k in F)if(F[k][0]===o)return F[k][1];
   const co=(window.CARDOPTS||{})[q+"|"+a];if(co&&co.o){const i=co.o.indexOf(o);if(i>=0&&co.n&&co.n[i])return co.n[i]}
   const c=D.find(d=>d[3]===o&&d[2]!==q);if(c)return `‘${o}’${jo(o)} 「${c[2]}」의 답이에요.`+(c[4]?"\n"+c[4]:"");return ""};
+// ───── 정답 피드백 공통 레이아웃: 결과 → 정답(초록, 왜 정답?) → 내 답이 틀린 이유 → 자세한 해설
+function xParts(x){x=String(x||"").trim();const out={why:"",seq:[]};if(!x)return out;
+  let L=x.split(/\n+/).map(t=>t.trim()).filter(Boolean);
+  if(L.length===1)L=L[0].split(/(?<=[.!?])\s+(?=\S)/);
+  const LAB=/^(무슨 일이었나|무슨 일|무슨 뜻인가|무슨 뜻|무엇인가|배경|지금 상황[^:：]{0,20}|이전 → 지금|다시 화제인 이유|헷갈리는 것|외우기|참고|예시|되돌린 과정|이후 흐름|그다음|시간 순서|법안 내용|진행)\s*[:：]\s*/;
+  const first=L.shift()||"";
+  let core=first.replace(/^(정답은|정답:|정답)\s*[^.!?]{0,80}?(이에요|예요|입니다|이다)[.]?\s*/,"");
+  if(!core&&L.length){core=L.shift().replace(LAB,"")}
+  out.why=core||first;
+  if(out.why.length>130){const ss=out.why.split(/(?<=[.!?])\s+(?=\S)/);let w="",k=0;while(k<ss.length&&(w.length<55||k<1)&&k<2){w+=(w?" ":"")+ss[k];k++}if(k<ss.length){out.why=w;out.seq.push(["",ss.slice(k).join(" ")])}}
+  L.forEach(l=>{const m=l.match(LAB);out.seq.push(m?[m[1],l.replace(LAB,"")]:["",l])});
+  return out}
+function mineFromX(x,mine){if(!x||!mine)return "";const key=String(mine).replace(/^[①-⑤\d]+번?\s*·?\s*/,"").replace(/\(.*?\)/g,"").trim();if(key.length<2)return "";
+  const toks=[key,key.split(/[\s·,]/)[0]].filter(t=>t&&t.length>=2);
+  const sents=String(x).split(/\n+|(?<=[.!?])\s+/);for(const t of toks){const f=sents.find(z=>z.includes(t)&&!/^정답/.test(z));if(f)return f.replace(/^(헷갈리는 것|참고)\s*[:：]\s*/,"")}return ""}
+function fbBlock(o){const p=xParts(o.x);if(o.mine&&!o.mineNote)o.mineNote=mineFromX(o.x,o.mine);
+  const cls=k=>/외우기/.test(k)?"memo":/헷갈/.test(k)?"warn":/지금|다시|최근|이후|그다음/.test(k)?"now":"";
+  return `<div class="afb${o.compact?" compact":""}">
+   ${o.ok===true?`<div class="fb-st ok">✔ 맞았어요</div>`:o.ok===false?`<div class="fb-st ng">✘ 틀렸어요</div>`:""}
+   <div class="fb-ans"><div class="fb-k">정답</div><div class="fb-a">${esc(o.label||o.ans)}</div>${p.why?`<div class="fb-why"><b>왜 정답?</b> ${esc(p.why)}</div>`:""}</div>
+   ${o.mine?`<div class="fb-mine"><div class="fb-k">내가 고른 답 · ${esc(o.mine)}</div><div class="fb-mx">${esc(o.mineNote||"정답이 아니에요. 위의 정답 이유와 비교해 보세요.")}</div></div>`:""}
+   ${p.seq.length&&!o.compact?`<details class="fb-more" ${o.closed?"":"open"}><summary>자세한 해설</summary>${p.seq.map(([k,v])=>k?`<div class="fb-row ${cls(k)}"><span class="fb-lab">${esc(k)}</span><span>${esc(v)}</span></div>`:`<p>${esc(v)}</p>`).join("")}</details>`:""}
+   ${p.seq.length&&o.compact?`<details class="fb-more"><summary>자세한 해설</summary>${p.seq.map(([k,v])=>`<p>${k?`<b>${esc(k)}</b> `:""}${esc(v)}</p>`).join("")}</details>`:""}
+  </div>`}
 function pickNote(q,o,a){const t=WX(q,o,a);
   return `<div class="pick"><span class="lbl">내가 고른 답이 틀린 이유</span><b>${esc(o)}</b><div class="x">${esc(t||"정답이 아니에요. 아래 해설에서 정답과 비교해 보세요.")}</div></div>`}
 function optList(q,opts,ans,mine){
@@ -5561,11 +5602,11 @@ function renderArticle(e,aid){
     el.querySelectorAll(".pqo").forEach(b=>b.onclick=()=>{if(el.dataset.done)return;el.dataset.done=1;const m=+b.dataset.m,ok=o[m]===d[3];
       el.querySelectorAll(".pqo").forEach(x=>{x.disabled=true;if(o[+x.dataset.m]===d[3])x.classList.add("simok");else if(x===b)x.classList.add("on")});
       if(!ok&&!st.wrong.includes(id(d))){st.wrong.push(id(d));save();stats()}
-      const r=el.querySelector(".nqr");r.hidden=false;r.innerHTML=ok?`<span class="mark ok">정답</span> 맞혔어요!`:`<span class="mark">X</span> 정답은 <b>${esc(d[3])}</b>. ${esc(typeof WX==="function"?(WX(d[2],o[m],d[3])||""):"")} <span class="hint">(오답노트에 넣었어요)</span>`})});
+      const r=el.querySelector(".nqr");r.hidden=false;r.innerHTML=fbBlock({compact:1,ok,ans:d[3],mine:ok?null:o[m],mineNote:ok?"":(WX(d[2],o[m],d[3])||"")+" (오답노트에 넣었어요)",x:DX(d[2],d[3],d[4])})})});
   bindTtsControls();bindPlayer();
 }
 try{if("speechSynthesis" in window)speechSynthesis.onvoiceschanged=()=>{if(st.mode==="news"&&!TTS.on){const s=$("#nvoice");if(!s&&ttsVoices().length>1)renderNews()}}}catch(e){}
 if(st.mode==="news")render();
 
 </script>
-<script src="login.js?v=1790928594522"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
+<script src="login.js?v=1790928864077"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
