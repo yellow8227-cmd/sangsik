@@ -21,8 +21,8 @@ function cardList(){try{return typeof D!=="undefined"?D:[]}catch(e){return[]}}
 function slim(arr){const m=cardIndex();return (arr||[]).map(x=>m.has(x)?m.get(x):x)}
 function fat(arr){const L=cardList();return (arr||[]).map(x=>typeof x==="number"&&L[x]?L[x][2]+"|"+L[x][3]:x)}
 function snapshot(){const d={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(PFX)&&k!=="studioS.snd")d[k]=lsGet(k)}return d}
-function shrink(d){d=Object.assign({},d);try{const v=JSON.parse(d["studioS.v1"]||"null");if(v){v.wrong=slim(v.wrong);v.known=slim(v.known);v._n=1;d["studioS.v1"]=JSON.stringify(v)}}catch(e){}return d}
-function grow(d){d=Object.assign({},d);try{const v=JSON.parse(d["studioS.v1"]||"null");if(v&&v._n){v.wrong=fat(v.wrong);v.known=fat(v.known);delete v._n;d["studioS.v1"]=JSON.stringify(v)}}catch(e){}return d}
+function shrink(d){d=Object.assign({},d);try{const v=JSON.parse(d["studioS.v1"]||"null");if(v){v.wrong=slim(v.wrong);v.known=slim(v.known);v._n=1;d["studioS.v1"]=JSON.stringify(v)}}catch(e){}try{const S=JSON.parse(d["studioS.seen"]||"null");if(S&&!S._n){const m=cardIndex(),o={_n:1};Object.entries(S).forEach(([k,r])=>{o[m.has(k)?m.get(k):k]=[r.n|0,r.c|0,r.w|0,Math.round((r.t||0)/1000)]});d["studioS.seen"]=JSON.stringify(o)}}catch(e){}return d}
+function grow(d){d=Object.assign({},d);try{const v=JSON.parse(d["studioS.v1"]||"null");if(v&&v._n){v.wrong=fat(v.wrong);v.known=fat(v.known);delete v._n;d["studioS.v1"]=JSON.stringify(v)}}catch(e){}try{const S=JSON.parse(d["studioS.seen"]||"null");if(S&&S._n){const L=cardList(),o={};Object.entries(S).forEach(([k,r])=>{if(k==="_n")return;const kk=/^\d+$/.test(k)&&L[+k]?L[+k][2]+"|"+L[+k][3]:k;o[kk]={n:r[0],c:r[1],w:r[2],t:r[3]*1000}});d["studioS.seen"]=JSON.stringify(o)}}catch(e){}return d}
 const b64=u8=>{let s="";for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s)};
 const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 async function pack(t){const txt=JSON.stringify({t:t||Date.now(),d:shrink(snapshot())});

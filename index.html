@@ -260,7 +260,7 @@ details.primerx summary{color:var(--ok)}
 .vb-cr{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4}.vb-cr a{color:inherit}
 .vb-links{display:flex;gap:8px;flex-wrap:wrap}.vb-links a{font-size:12.5px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;color:var(--ink);text-decoration:none}
 .gl{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;border-bottom:1.5px dotted #3b6fd8;cursor:help;line-height:inherit}.gl:hover{background:color-mix(in srgb,#3b6fd8 10%,transparent)}.gltip{position:absolute;z-index:200;background:var(--ink);color:var(--sheet);border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.6;box-shadow:0 8px 24px rgba(0,0,0,.25)}.gltip b{display:block;color:var(--mark);margin-bottom:2px}
-/*fb-css-end*//*news-css*/.npaper{--serif:"Noto Serif KR","Nanum Myeongjo",Georgia,serif;background:var(--sheet);border:1.5px solid var(--ink);border-radius:10px;padding:18px 16px 22px;margin-bottom:80px}
+/*fb-css-end*//*smart-css*/.kind{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:9px;margin-right:4px;vertical-align:1px}.k-new{background:#e3f0ff;color:#1859b5}.k-wrong{background:#ffe6e3;color:#b3261e}.k-due{background:#fff2d6;color:#8a5a00}.k-done{background:#eceff1;color:#555}@media (prefers-color-scheme:dark){.k-new{background:#173250;color:#9cc8ff}.k-wrong{background:#4a1f1b;color:#ffb4ab}.k-due{background:#3d300f;color:#ffd47a}.k-done{background:#2e3134;color:#bbb}}/*smart-css-end*//*news-css*/.npaper{--serif:"Noto Serif KR","Nanum Myeongjo",Georgia,serif;background:var(--sheet);border:1.5px solid var(--ink);border-radius:10px;padding:18px 16px 22px;margin-bottom:80px}
 .nmast{text-align:center;border-bottom:3px double var(--ink);padding-bottom:10px;margin-bottom:12px}
 .nm-top{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:6px;gap:8px;flex-wrap:wrap}
 .nm-d{color:var(--omr);font-weight:700}
@@ -4995,6 +4995,44 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
 const pool=()=>st.cat==="전체"?D:st.cat===NOT?D.filter(isNot):D.filter(d=>d[0]===st.cat);
+// @@smart start · 내 기록으로 문제 고르기(처음 보는 문제·틀린 문제·복습할 때 된 문제 먼저, 잘 맞힌 건 뒤로, 같은 유형 연속 X)
+const SEEN_KEY="studioS.seen";let SEEN={};
+try{SEEN=JSON.parse(localStorage.getItem(SEEN_KEY)||"{}")||{}}catch(e){}
+{const M=window.FIXMAP||{};Object.keys(SEEN).forEach(k=>{if(M[k]&&!SEEN[M[k]]){SEEN[M[k]]=SEEN[k];delete SEEN[k]}})}
+let _seenT=0;const seenSave=()=>{clearTimeout(_seenT);_seenT=setTimeout(()=>{try{localStorage.setItem(SEEN_KEY,JSON.stringify(SEEN))}catch(e){}},300)};
+function seenRec(d){const k=id(d);return SEEN[k]||(SEEN[k]={n:0,c:0,w:0,t:0})}
+function markSeen(d,ok){if(!d)return;const s=seenRec(d);s.n++;s.t=Date.now();if(ok)s.c++;else{s.c=0;s.w++}seenSave()}
+function markShown(d){if(!d)return;seenRec(d).t=Date.now();seenSave()}
+const DUE=[10*60e3,864e5,3*864e5,7*864e5,14*864e5];
+function seenKind(d,W){const s=SEEN[id(d)];if(!s||!s.t)return "new";if((W||new Set(st.wrong)).has(id(d))||(s.w&&!s.c))return "wrong";
+  return Date.now()-s.t>=DUE[Math.min(s.c,DUE.length-1)]?"due":"done"}
+function smartOrder(list,n){
+  const now=Date.now(),W=new Set(st.wrong),A={};
+  list.forEach(d=>{const s=SEEN[id(d)];if(!s||!s.n)return;const a=A[d[0]]||(A[d[0]]={n:0,ok:0});a.n++;if(s.c>0)a.ok++});
+  // 칸 나누기: 다시 볼 것(틀린 것·복습 때 된 것) / 처음 보는 것 / 잘 맞혀 쉬는 것 / 방금 본 것
+  const R=[],N=[],Z=[],J=[];
+  list.forEach(d=>{const k=id(d),s=SEEN[k],r=Math.random(),ca=A[d[0]],weak=ca&&ca.n>=5?1-ca.ok/ca.n:0.5;
+    if(!s||!s.t){N.push({d,v:r+weak*0.8});return}
+    const age=now-s.t;if(age<20*60e3){J.push({d,v:-age});return}
+    if(W.has(k)||(s.w&&!s.c)){R.push({d,v:2+r+weak});return}
+    const due=DUE[Math.min(s.c,DUE.length-1)];
+    if(age>=due)R.push({d,v:r+weak*0.5+Math.min(1,(age-due)/due)});else Z.push({d,v:r-Math.min(s.c,5)*0.2})});
+  [R,N,Z,J].forEach(x=>x.sort((a,b)=>b.v-a.v));
+  // 10문제 중 3문제쯤은 다시 볼 것, 나머지는 새 문제. 둘 중 하나가 바닥나면 다른 쪽으로 채운다
+  const seq=[];let ri=0,ni=0;
+  while(ri<R.length||ni<N.length){const wantR=(seq.length%10)%3===2;
+    if((wantR&&ri<R.length)||ni>=N.length)seq.push(R[ri++]);else seq.push(N[ni++])}
+  const tail=Z.concat(J).map(x=>x.d);
+  // 같은 묶음(유형)이 몰리지 않게: 앞쪽 몇 개 중 덜 나온 유형을 고른다
+  const lim=Math.min(seq.length,n?Math.max(n*3,30):400),head=seq.slice(0,lim).map((x,i)=>({d:x.d,v:-i*0.15})),out=[],gc={};let last="";
+  const want=n?Math.min(n,list.length):Infinity;
+  while(head.length&&out.length<want){let bi=0,bv=-1e9;
+    for(let j=0;j<Math.min(8,head.length);j++){const g=head[j].d[1]+"";const v=head[j].v-(gc[g]||0)*0.9-(g===last?3:0);if(v>bv){bv=v;bi=j}}
+    const x=head.splice(bi,1)[0];out.push(x.d);const g=x.d[1]+"";gc[g]=(gc[g]||0)+1;last=g}
+  const all=out.concat(head.map(x=>x.d),seq.slice(lim).map(x=>x.d),tail);
+  return n?all.slice(0,n):all}
+const kindTag=k=>k?`<span class="kind k-${k}">${{new:"새 문제",wrong:"다시 도전",due:"복습",done:"한 번 더"}[k]}</span> `:"";
+// @@smart end
 const imgUrl=q=>"https://www.google.com/search?tbm=isch&q="+encodeURIComponent(q);
 
 function stats(){
@@ -5013,7 +5051,7 @@ function answerBlock(d){
 
 // 암기카드
 let deck=[],di=0,shown=false;
-function newDeck(list){deck=shuffle(list);di=0;shown=false}
+function newDeck(list){deck=smartOrder(list);di=0;shown=false}
 
 // ───── 초심자용 힌트
 const CHO="ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
@@ -5060,22 +5098,22 @@ function renderCard0(list,label){
     <div class="row"><button class="btn" id="same">같은 유형 더 풀기 (${D.filter(x=>x[1]===d[1]).length}문항)</button></div>
   </div>`;
   const go=n=>{di=(di+n+deck.length)%deck.length;shown=false;hintLv=0;render()};
-  $("#flip")&&($("#flip").onclick=()=>{shown=true;render()});
+  $("#flip")&&($("#flip").onclick=()=>{shown=true;markShown(d);render()});
   $("#hint")&&($("#hint").onclick=()=>{hintLv++;render()});
   $("#easy")&&($("#easy").onclick=()=>explainEasy(d[2],d[3],d[4],$("#easyout"),$("#easy")));
   $("#prev").onclick=()=>go(-1);$("#next").onclick=()=>go(1);
   $("#shuf").onclick=()=>{newDeck(deck);render()};
   $("#same").onclick=()=>{st.mode="quiz";save();startQuiz(D.filter(x=>x[1]===d[1]));render();window.scrollTo({top:0})};
-  if($("#no"))$("#no").onclick=()=>{if(!st.wrong.includes(id(d)))st.wrong.push(id(d));st.known=st.known.filter(k=>k!==id(d));save();stats();go(1)};
-  if($("#yes"))$("#yes").onclick=()=>{if(!st.known.includes(id(d)))st.known.push(id(d));
+  if($("#no"))$("#no").onclick=()=>{markSeen(d,false);if(!st.wrong.includes(id(d)))st.wrong.push(id(d));st.known=st.known.filter(k=>k!==id(d));save();stats();go(1)};
+  if($("#yes"))$("#yes").onclick=()=>{markSeen(d,true);if(!st.known.includes(id(d)))st.known.push(id(d));
     if(label==="wrong"){st.wrong=st.wrong.filter(k=>k!==id(d));save();stats();deck.splice(di,1);if(di>=deck.length)di=0;shown=false;render()}else{save();stats();go(1)}};
 }
 
 // 객관식
 let qz=null;
 function startQuiz(list){
-  const p=list||pool(),qs=shuffle(p).slice(0,10);
-  qz={qs,i:0,score:0,picked:null,opts:qs.map(d=>makeOpts(d))};
+  const p=list||pool(),qs=smartOrder(p,10),W=new Set(st.wrong);
+  qz={qs,kinds:qs.map(d=>seenKind(d,W)),i:0,score:0,picked:null,opts:qs.map(d=>makeOpts(d))};
 }
 function optShape(t){t=String(t);return {num:/\d/.test(t),br:/[〈『《]/.test(t),multi:/[·\/,]/.test(t),len:[...t].length,end:t.replace(/[\s)）〉』》]+$/,"").slice(-1),lat:/^[A-Za-z]/.test(t)}}
 function optScore(a,b){const A=optShape(a),B=optShape(b);let s=0;
@@ -5112,7 +5150,7 @@ function renderQuiz(){
   }
   const d=qz.qs[qz.i],opts=qz.opts[qz.i],p=qz.picked;
   $("#stage").innerHTML=`<div class="card">
-    <div class="meta"><span class="whenrow"><span class="tag">${esc(d[0])}</span>${whenTag(d[2],d[3])}</span><span>${qz.i+1} / ${qz.qs.length} · 점수 ${qz.score}</span></div>
+    <div class="meta"><span class="whenrow"><span class="tag">${esc(d[0])}</span>${whenTag(d[2],d[3])}</span><span>${kindTag(qz.kinds&&qz.kinds[qz.i])}${qz.i+1} / ${qz.qs.length} · 점수 ${qz.score}</span></div>
     <div class="progress"><i style="width:${qz.i/qz.qs.length*100}%"></i></div>
     <div class="q">${esc(d[2])}</div>
     ${d[7]?`<img class="qimg" src="${d[7]}" alt="문제 그림" loading="lazy">`:""}
@@ -5124,6 +5162,7 @@ function renderQuiz(){
   </div>`;
   document.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
     const k=+b.dataset.k;qz.picked=k;
+    markSeen(d,opts[k]===d[3]);
     if(opts[k]===d[3])qz.score++;else if(!st.wrong.includes(id(d))){st.wrong.push(id(d));save();stats()}
     render();
   });
@@ -5292,7 +5331,7 @@ function renderRange(k){const e=EXAMS[k];if(!rangeDeck||rangeDeck.k!==k){rangeDe
   $("#r-quiz").onclick=()=>{const list=L;studySet=null;st.mode="quiz";save();startQuiz(list);render();window.scrollTo({top:0})};
   $("#r-game").onclick=()=>{studySet=null;st.mode="game";save();tabs();chips();stopGameLoops();game=null;startBossList(L,"범위 "+e.title.replace(" 실전 모의고사",""))};
 }
-function startBossList(list,label){game={type:"boss",cat:label,qs:shuffle(list),i:0,stage:0,bhp:100,lives:3,score:0,combo:0,missed:[],state:null,left:10};startBossQ();bgmStart()}
+function startBossList(list,label){game={type:"boss",cat:label,qs:smartOrder(list),i:0,stage:0,bhp:100,lives:3,score:0,combo:0,missed:[],state:null,left:10};startBossQ();bgmStart()}
 function renderStudy(){
   if(studySet!==null)return renderRange(studySet);
   if(!studyCat){
@@ -5408,7 +5447,7 @@ function endGame(title,score,key,extra){
 // 스피드 서바이벌
 function startSurvival(cat){
   const pool=D.filter(d=>(cat==="전체"||d[0]===cat));
-  game={type:"sv",cat,qs:shuffle(pool).slice(0,40),i:0,lives:3,score:0,combo:0,picked:null,missed:[],left:12};
+  game={type:"sv",cat,qs:smartOrder(pool,40),i:0,lives:3,score:0,combo:0,picked:null,missed:[],left:12};
   game.opts=game.qs.map(d=>makeOpts(d));renderGame();
 }
 function renderSurvival(){
@@ -5421,7 +5460,7 @@ function renderSurvival(){
     <div class="opts">${opts.map((o,k)=>{let c="";if(p!==null){if(o===d[3])c="right";else if(k===p)c="wrong"}return `<button class="opt ${c}" data-k="${k}" ${p!==null?"disabled":""}><span class="dot">${k+1}</span><span>${esc(p!==null&&o===d[3]?o:dispOpts(opts)[k])}</span></button>`}).join("")}</div>
     ${p!==null?`${fbBlock({compact:1,ok:p>=0&&opts[p]===d[3],ans:d[3],mine:p>=0&&opts[p]!==d[3]?opts[p]:p===-1?"시간 초과":null,mineNote:p>=0&&opts[p]!==d[3]?WX(d[2],opts[p],d[3]):"시간 안에 고르지 못했어요.",x:DX(d[2],d[3],d[4])})}<div class="row"><button class="btn primary" id="gnext">다음</button></div>`:""}
     <div class="row"><button class="btn small" id="gquit">그만하기</button></div></div>`;
-  const answer=k=>{clearInterval(gTimer);g.picked=k;
+  const answer=k=>{clearInterval(gTimer);g.picked=k;markSeen(d,k!==-1&&opts[k]===d[3]);
     if(k!==-1&&opts[k]===d[3]){g.combo++;g.score+=10*Math.min(g.combo,5)+Math.round(g.left)}else{g.combo=0;g.lives--;g.missed.push(d);if(!st.wrong.includes(id(d))){st.wrong.push(id(d));save()}}
     renderSurvival()};
   document.querySelectorAll(".opt").forEach(b=>b.onclick=()=>answer(+b.dataset.k));
@@ -5432,7 +5471,7 @@ function renderSurvival(){
 // 초성 퀴즈
 function startCho(cat){
   const pool=D.filter(d=>(cat==="전체"||d[0]===cat)&&!d[6]&&letters(d[3])>=2&&letters(d[3])<=10&&/[가-힣]/.test(d[3]));
-  game={type:"cho",cat,qs:shuffle(pool).slice(0,10),i:0,score:0,state:null,tries:0,missed:[],lv:1};renderGame();
+  game={type:"cho",cat,qs:smartOrder(pool,10),i:0,score:0,state:null,tries:0,missed:[],lv:1};renderGame();
 }
 function renderCho(){
   const g=game;if(g.i>=g.qs.length)return endGame("초성 퀴즈",g.score,"초성·"+g.cat,`${g.qs.length}문제 중 ${g.qs.length-g.missed.length}개 정답.`);
@@ -5450,11 +5489,11 @@ function renderCho(){
   if(g.state){$("#cnext").onclick=()=>{g.i++;g.state=null;g.tries=0;g.lv=1;renderCho()};return}
   const inp=$("#cin");inp.focus();
   const check=()=>{const v=norm(inp.value);if(!v)return;
-    if(v===norm(d[3])||norm(d[3]).replace(/\(.*\)/,"")===v){g.state="ok";g.score+=Math.max(5,(g.lv===1?20:15)-g.tries*3);renderCho()}
-    else{g.tries++;if(g.tries>=3){g.state="miss";g.missed.push(d);if(!st.wrong.includes(id(d))){st.wrong.push(id(d));save()}}renderCho()}};
+    if(v===norm(d[3])||norm(d[3]).replace(/\(.*\)/,"")===v){g.state="ok";markSeen(d,!g.tries);g.score+=Math.max(5,(g.lv===1?20:15)-g.tries*3);renderCho()}
+    else{g.tries++;if(g.tries>=3){g.state="miss";markSeen(d,false);g.missed.push(d);if(!st.wrong.includes(id(d))){st.wrong.push(id(d));save()}}renderCho()}};
   $("#cgo").onclick=check;inp.onkeydown=e=>{if(e.key==="Enter")check()};
   if($("#cmore"))$("#cmore").onclick=()=>{g.lv=2;renderCho()};
-  $("#cpass").onclick=()=>{g.state="miss";g.missed.push(d);renderCho()};
+  $("#cpass").onclick=()=>{g.state="miss";markSeen(d,false);g.missed.push(d);renderCho()};
 }
 // 짝 맞추기
 function startPairs(set){
@@ -5515,7 +5554,7 @@ const shortPool=(cat,max)=>D.filter(d=>(cat==="전체"||d[0]===cat)&&!d[6]&&d[3]
 // ───── 보스 배틀
 const BOSSES=[["맞춤법 마왕","綴"],["미술관 유령","畵"],["법전 골렘","法"],["경기장 드래곤","競"],["노벨 리치","賞"],["시청률 악마","視"],["최종 보스 · 필기시험","試"]];
 function startBoss(cat){const pool=D.filter(d=>cat==="전체"||d[0]===cat);
-  game={type:"boss",cat,qs:shuffle(pool),i:0,stage:0,bhp:100,lives:3,score:0,combo:0,missed:[],state:null,left:10};startBossQ();bgmStart()}
+  game={type:"boss",cat,qs:smartOrder(pool),i:0,stage:0,bhp:100,lives:3,score:0,combo:0,missed:[],state:null,left:10};startBossQ();bgmStart()}
 function bossLimit(){return Math.max(6,11-game.stage)}
 function startBossQ(){const g=game;g.d=g.qs[g.i%g.qs.length];g.opts=makeOpts(g.d);g.state=null;g.left=bossLimit();renderBoss()}
 function renderBoss(){const g=game,d=g.d,[bn,bg]=BOSSES[Math.min(g.stage,BOSSES.length-1)];
@@ -5530,7 +5569,7 @@ function renderBoss(){const g=game,d=g.d,[bn,bg]=BOSSES[Math.min(g.stage,BOSSES.
   bindSnd(bgmStart);
   $("#gquit").onclick=()=>{g.lives=0;endBoss()};
   if(g.state==="miss"){$("#bnext").onclick=()=>{if(g.lives<=0)return endBoss();g.i++;startBossQ()};return}
-  const answer=k=>{if(g.state)return;clearInterval(gTimer);g.picked=k;
+  const answer=k=>{if(g.state)return;clearInterval(gTimer);g.picked=k;markSeen(d,k>=0&&g.opts[k]===d[3]);
     if(k>=0&&g.opts[k]===d[3]){g.combo++;const dmg=Math.min(45,15+g.combo*5+Math.round(g.left*1.5));g.bhp=Math.max(0,g.bhp-dmg);g.score+=dmg*(g.stage+1);
       sfx.hit();sfx.ok();const b=$("#boss");fxShake(b);fxFloat(b,"-"+dmg+(g.combo>2?" 콤보!":""),"dmg");const bar=$("#bhp");if(bar)bar.style.width=g.bhp+"%";
       document.querySelectorAll(".opt")[k].classList.add("right");g.state="ok";
@@ -5549,7 +5588,7 @@ function endBoss(){const g=game;stopGameLoops();sfx.lose();endGame("보스 배�
 
 // ───── 산성비 (떨어지는 정답 잡기)
 function startRain(cat){const pool=shortPool(cat,14);if(pool.length<8)return alert("이 과목은 산성비에 쓸 짧은 정답이 부족해요. 다른 과목을 골라 주세요.");
-  game={type:"rain",cat,qs:shuffle(pool),i:0,lives:3,score:0,level:1,okN:0,missed:[]};renderRainFrame();bgmStart();nextRain()}
+  game={type:"rain",cat,qs:smartOrder(pool),i:0,lives:3,score:0,level:1,okN:0,missed:[]};renderRainFrame();bgmStart();nextRain()}
 function renderRainFrame(){const g=game;
   $("#stage").innerHTML=`<div class="card game">
     <div class="meta"><span class="lives" id="rl"></span><span>LV <b id="rlv">1</b> · 점수 <b id="rsc">0</b></span>${sndBtn()}</div>
@@ -5568,15 +5607,15 @@ function nextRain(){const g=game;cancelAnimationFrame(gRaf);if(g.lives<=0)return
   const drops=shuffle(words).map((w,j)=>{const b=document.createElement("button");b.className="drop";b.textContent=w;box.appendChild(b);
     const bw=Math.min(b.offsetWidth,W*0.46);b.style.maxWidth=W*0.46+"px";const x=Math.random()*(W-bw-8)+4;
     const o={el:b,w,x,y:6-j*70,ok:w===d[3],dead:false};b.style.left=x+"px";b.style.transform=`translateY(${o.y}px)`;
-    b.onclick=()=>{if(o.dead)return;if(o.ok){o.dead=true;b.classList.add("burst");g.okN++;g.score+=10*g.level;sfx.pop();sfx.ok();fxFloat(box,"+"+10*g.level,"gain");
+    b.onclick=()=>{if(o.dead)return;if(o.ok){o.dead=true;markSeen(d,true);b.classList.add("burst");g.okN++;g.score+=10*g.level;sfx.pop();sfx.ok();fxFloat(box,"+"+10*g.level,"gain");
         if(g.okN%5===0){g.level++;fxFloat(box,"LEVEL UP!","lvup");sfx.win()}g.i++;setTimeout(nextRain,350)}
-      else{o.dead=true;b.classList.add("bad");g.lives--;g.missed.push(d);if(!st.wrong.includes(id(d))){st.wrong.push(id(d));save()}sfx.bad();fxFlash();rainHud();if(g.lives<=0)setTimeout(endRain,500)}};
+      else{o.dead=true;b.classList.add("bad");markSeen(d,false);g.lives--;g.missed.push(d);if(!st.wrong.includes(id(d))){st.wrong.push(id(d));save()}sfx.bad();fxFlash();rainHud();if(g.lives<=0)setTimeout(endRain,500)}};
     return o});
   let last=performance.now();
   const step=t=>{const dt=Math.min(.05,(t-last)/1000);last=t;let corr=drops.find(o=>o.ok);
     drops.forEach(o=>{if(o.dead)return;o.y+=speed*dt;o.el.style.transform=`translateY(${o.y}px)`});
     if(corr&&!corr.dead){SND.tension=1+Math.min(1,Math.max(0,corr.y/H))*0.9+g.level*0.05;
-      if(corr.y>H-40){corr.dead=true;corr.el.classList.add("missed");g.lives--;g.missed.push(d);sfx.bad();fxFlash();rainHud();
+      if(corr.y>H-40){corr.dead=true;markSeen(d,false);corr.el.classList.add("missed");g.lives--;g.missed.push(d);sfx.bad();fxFlash();rainHud();
         $("#rq").textContent="놓쳤어요! 정답: "+d[3];g.i++;setTimeout(nextRain,1300);return}}
     gRaf=requestAnimationFrame(step)};
   gRaf=requestAnimationFrame(step);
@@ -5584,7 +5623,7 @@ function nextRain(){const g=game;cancelAnimationFrame(gRaf);if(g.lives<=0)return
 function endRain(){const g=game;stopGameLoops();sfx.lose();endGame("산성비",g.score,"산성비·"+g.cat,`레벨 ${g.level}, 정답 ${g.okN}개.`)}
 
 // ───── 상식 빙고
-function startBingo(cat){let pool=shortPool(cat,10);const seen=new Set();pool=shuffle(pool).filter(d=>!seen.has(d[3])&&seen.add(d[3]));
+function startBingo(cat){let pool=shortPool(cat,10);const seen=new Set();pool=smartOrder(pool).filter(d=>!seen.has(d[3])&&seen.add(d[3]));
   if(pool.length<16)return alert("이 과목은 빙고판을 채울 문제가 부족해요. 다른 과목을 골라 주세요.");
   const cards=pool.slice(0,16);
   game={type:"bingo",cat,cards,board:shuffle(cards.map((d,i)=>i)),order:shuffle(cards.map((d,i)=>i)),qi:0,marked:new Set(),lines:0,score:0,left:150,missed:[],wrongN:0};
@@ -5923,6 +5962,7 @@ function renderArticle(e,aid){
   document.querySelectorAll(".nq").forEach(el=>{const d=cards[+el.dataset.j],o=cardOptCache[d[2]+"|"+d[3]];
     el.querySelectorAll(".pqo").forEach(b=>b.onclick=()=>{if(el.dataset.done)return;el.dataset.done=1;const m=+b.dataset.m,ok=o[m]===d[3];
       el.querySelectorAll(".pqo").forEach(x=>{x.disabled=true;if(o[+x.dataset.m]===d[3])x.classList.add("simok");else if(x===b)x.classList.add("on")});
+      if(typeof markSeen==="function")markSeen(d,ok);
       if(!ok&&!st.wrong.includes(id(d))){st.wrong.push(id(d));save();stats()}
       const r=el.querySelector(".nqr");r.hidden=false;r.innerHTML=fbBlock({compact:1,ok,ans:d[3],mine:ok?null:o[m],mineNote:ok?"":(WX(d[2],o[m],d[3])||"")+" (오답노트에 넣었어요)",x:DX(d[2],d[3],d[4])})})});
   bindTtsControls();bindPlayer();
@@ -5931,4 +5971,4 @@ try{if("speechSynthesis" in window)speechSynthesis.onvoiceschanged=()=>{if(st.mo
 if(st.mode==="news")render();
 
 </script>
-<script src="login.js?v=1791032594177"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
+<script src="login.js?v=1791100350432"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
