@@ -5842,17 +5842,18 @@ const BM_KEY="studioS.bm";let BM={};try{BM=JSON.parse(localStorage.getItem(BM_KE
 {const M=window.FIXMAP||{};Object.keys(BM).forEach(k=>{if(M[k]&&!BM[M[k]]){BM[M[k]]=BM[k];delete BM[k]}})}
 const bmSave=()=>{try{localStorage.setItem(BM_KEY,JSON.stringify(BM))}catch(e){}};
 const _BM=[];
-function bmBtn(q,a,x,img,src,big){if(!q||!a)return "";const k=q+"|"+a,on=!!(BM[k]&&!BM[k].off);_BM.push({q,a,x:x||"",img:img||null,src:src||((D.find(d=>d[2]===q&&d[3]===a)||[])[0])||""});
+function bmBtn(q,a,x,img,src,big){if(!q||!a)return "";const k=q+"|"+a,on=bmOn(BM[k]);_BM.push({q,a,x:x||"",img:img||null,src:src||((D.find(d=>d[2]===q&&d[3]===a)||[])[0])||""});
   return `<button class="bm${on?" on":""}${big?" big":""}" data-bmi="${_BM.length-1}" aria-pressed="${on}" title="북마크">${on?"★":"☆"}<span>${on?"북마크됨":"북마크"}</span></button>`}
 const bmD=d=>bmBtn(d[2],d[3],DX(d[2],d[3],d[4]),d[7],d[0]);
-function bmCount(){return Object.values(BM).filter(v=>!v.off).length}
+const bmOn=v=>!!(v&&v.q&&(v.t||0)>(v.off||0));
+function bmCount(){return Object.values(BM).filter(bmOn).length}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-bmi]");if(!b)return;e.preventDefault();e.stopPropagation();
   const it=_BM[+b.dataset.bmi];if(!it)return;const k=it.q+"|"+it.a;
-  if(BM[k]&&!BM[k].off)BM[k]={off:1,t:Date.now()};else BM[k]={...it,t:Date.now()};bmSave();
-  const on=!BM[k].off;document.querySelectorAll("[data-bmi]").forEach(x=>{const y=_BM[+x.dataset.bmi];if(y&&y.q+"|"+y.a===k){x.classList.toggle("on",on);x.setAttribute("aria-pressed",on);x.innerHTML=(on?"★":"☆")+`<span>${on?"북마크됨":"북마크"}</span>`}});
+  const now=Date.now();if(bmOn(BM[k]))BM[k]={...BM[k],off:now};else BM[k]={...it,t:Math.max(now,((BM[k]||{}).off||0)+1),off:(BM[k]||{}).off||0};bmSave();
+  const on=bmOn(BM[k]);document.querySelectorAll("[data-bmi]").forEach(x=>{const y=_BM[+x.dataset.bmi];if(y&&y.q+"|"+y.a===k){x.classList.toggle("on",on);x.setAttribute("aria-pressed",on);x.innerHTML=(on?"★":"☆")+`<span>${on?"북마크됨":"북마크"}</span>`}});
   if(typeof stats==="function")stats();if(st.mode==="bm"&&!on){const r=b.closest(".bmrow");if(r)r.classList.add("gone")}},true);
 let bmCat="전체";
-function renderBm(){const L=Object.entries(BM).filter(([k,v])=>!v.off).sort((a,b)=>b[1].t-a[1].t).map(([k,v])=>v);
+function renderBm(){const L=Object.entries(BM).filter(([k,v])=>bmOn(v)).sort((a,b)=>b[1].t-a[1].t).map(([k,v])=>v);
   const cats=["전체",...new Set(L.map(v=>v.src||"기타"))],show=L.filter(v=>bmCat==="전체"||(v.src||"기타")===bmCat);
   const cards=show.map(v=>D.find(d=>d[2]===v.q&&d[3]===v.a)).filter(Boolean);
   $("#stage").innerHTML=`<div class="card bmview"><div class="meta"><span class="tag">⭐ 북마크</span><span>${L.length}개</span></div>
@@ -6061,4 +6062,4 @@ try{if("speechSynthesis" in window)speechSynthesis.onvoiceschanged=()=>{if(st.mo
 if(st.mode==="news")render();
 
 </script>
-<script src="login.js?v=1791114307071"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
+<script src="login.js?v=1791114335698"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
