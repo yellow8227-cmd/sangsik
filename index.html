@@ -1781,7 +1781,7 @@ function masterTabs(){const M=window.EMASTER,T=[];
 function renderMaster(){const T=masterTabs();if(mTab<0||mTab>=T.length)mTab=0;const t=T[mTab],m=t.m,c=t.c;
   const ek=t.mine?"mine@"+(m.ver||1):(c&&t.base===window.EMASTER.mine)?"c:"+c.to:null,ed=ek&&myEd[ek];
   const tabs=`<div class="bmcats">${T.map((x,i)=>x.kwv?"":`<button class="chip" data-mt="${i}" aria-pressed="${mTab===i}">${esc(x.lab)}</button>`).join("")}${t.kwv?`<button class="chip" aria-pressed="true">${esc(t.lab)}</button>`:""}</div>`;
-  const kwvList=T.map((x,i)=>x.kwv?`<button class="kwvb" data-mt="${i}" aria-pressed="${mTab===i}"><b>${esc(x.c.to)}</b><span>${esc(x.c.title)}</span></button>`:"").join("");
+  const kwvList=T.map((x,i)=>x.kwv?`<button class="kwvb" data-mt="${i}" aria-pressed="${mTab===i}"><b>${esc(x.c.to)}</b></button>`:"").join("");
   const body=ed&&ed.body?ed.body:(c?c.body:m.body),ttl=ed&&ed.title?ed.title:(c?c.title:m.title);
   if(mEditing&&ek){$("#stage").innerHTML=`<div class="paper exr"><div class="paper-head"><div><div class="ticket">✏️ 내가 고치기</div><div class="set-t">${esc(t.lab)}</div></div></div>
      <div class="hint">문단은 빈 줄 하나로 나눠요. 저장하면 이 기기에 남고, 로그인했으면 다른 기기에도 이어져요.</div>
@@ -1801,7 +1801,7 @@ function renderMaster(){const T=masterTabs();if(mTab<0||mTab>=T.length)mTab=0;co
    ${t.mine&&m.anchors?`<div class="row"><button class="btn primary" id="ancgo">🧠 앵커 문장 외우기 카드</button></div>`:""}
    ${t.mine&&m.fixes?`<details class="exsec" open><summary><b>원래 글에서 고친 것</b></summary><ul>${m.fixes.map(f=>`<li>${esc(f)}</li>`).join("")}</ul></details>`:""}
    ${ek?`<div class="row"><button class="btn primary" id="meedit">✏️ 내가 고치기</button>${ed?`<span class="hint">내가 고친 글이에요 · ${new Date(ed.t).toLocaleDateString("ko-KR")}</span>`:""}</div>`:""}
-   <article class="exbody"><h2 class="extitle">${esc(ttl)}</h2>
+   <article class="exbody"><h2 class="extitle">${esc(t.kwv?c.to:(t.fin||t.mine)?"거짓말":ttl)}</h2>
     ${body.split(/\n\s*\n/).map((p,j)=>`${!c&&!ed&&exMap&&m.map&&m.map[j]?`<div class="exrole"><span>${esc(m.map[j].p)}</span>${esc(m.map[j].role)}</div>`:""}<p>${c?esc(p):slotHi(p,m.slots)}</p>`).join("")}
     <div class="hint">공백 포함 ${body.length.toLocaleString()}자</div></article>
    ${t.fin&&window.EMASTER.mine.kwswap?`<section class="exsec"><h3>제시어별로 바꾸기</h3><div class="hint">뼈대는 그대로, 아래 줄만 바꿔 끼워요. 제시어를 누르면 펼쳐져요.</div>${window.EMASTER.mine.kwswap.map(k=>`<details class="kws"><summary><b>${esc(k.kw)}</b> <span class="hint">${esc(k.type)}</span></summary><div class="hint">그대로: ${esc(k.keep)}</div><table class="cvt">${k.swap.map(([a,b])=>`<tr><td>${esc(a)}</td><td>${esc(b)}</td></tr>`).join("")}</table></details>`).join("")}</section>`:c?`<section class="exsec"><h3>바꾼 칸</h3><table class="cvt"><tr><th>칸</th><th>원래 틀</th><th>이 글</th></tr>${(c.changed||[]).map(x=>`<tr><td>${esc(x.slot)}</td><td>${esc(x.from)}</td><td><b>${esc(x.to)}</b></td></tr>`).join("")}</table></section>
@@ -6260,4 +6260,4 @@ try{if("speechSynthesis" in window)speechSynthesis.onvoiceschanged=()=>{if(st.mo
 if(st.mode==="news")render();
 
 </script>
-<script src="login.js?v=1791300654596"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
+<script src="login.js?v=1791300888153"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
