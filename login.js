@@ -50,6 +50,7 @@ async function remote(){const r=await api("ss_load",{p_token:user.token});return
 // 두 기록 합치기: 목록은 합집합, 숫자는 큰 쪽, 글은 긴 쪽 — 어느 쪽 기록도 버리지 않는다
 function deepMerge(a,b){
   if(Array.isArray(a)&&Array.isArray(b)){if(!a.every(x=>typeof x==="string")||!b.every(x=>typeof x==="string"))return a.length?a:b;const out=a.slice(),seen=new Set(a.map(x=>JSON.stringify(x)));b.forEach(x=>{const k=JSON.stringify(x);if(!seen.has(k)){seen.add(k);out.push(x)}});return out}
+  if(a&&b&&typeof a==="object"&&typeof b==="object"&&"body" in a&&"t" in a&&"t" in b)return (a.t||0)>=(b.t||0)?a:b;
   if(a&&b&&typeof a==="object"&&typeof b==="object"&&!Array.isArray(a)&&!Array.isArray(b)){if("ans" in a||"score" in a||"text" in a&&"left" in a)return ("text" in a&&(b.text||"").length>(a.text||"").length)?b:a;const o=Object.assign({},b);Object.keys(a).forEach(k=>{o[k]=k in b?deepMerge(a[k],b[k]):a[k]});return o}
   if(typeof a==="number"&&typeof b==="number")return Math.max(a,b);
   if(typeof a==="string"&&typeof b==="string")return a.length>=b.length?a:b;
