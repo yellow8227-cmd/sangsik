@@ -1981,7 +1981,7 @@ function esPlay(items,onItem,onEnd){if(!esOK()){alert("이 브라우저는 음�
     onItem&&onItem(i);const u=new SpeechSynthesisUtterance(items[i].replace(/\.\.\./g,"…"));window._esU=u;u.lang="ko-KR";const v=esVoice();if(v)u.voice=v;u.rate=esRate;
     u.onend=()=>{if(g!==esGen)return;i++;setTimeout(next,280)};u.onerror=()=>{if(g!==esGen)return;i++;setTimeout(next,50)};speechSynthesis.speak(u)};next()}
 const esRates=()=>`<span class="esr">${[0.6,0.7,0.8,1,1.2,1.5].map(r=>`<button class="chip" data-rate="${r}" aria-pressed="${esRate===r}">${r}×</button>`).join("")}</span>`;
-function bindRates(){document.querySelectorAll("[data-rate]").forEach(b=>b.onclick=()=>{esRate=+b.dataset.rate;try{localStorage.setItem("studioS.esrate",esRate)}catch(e){}document.querySelectorAll("[data-rate]").forEach(x=>x.setAttribute("aria-pressed",x===b))})}
+function bindRates(){document.querySelectorAll("[data-rate]").forEach(b=>b.onclick=()=>{esRate=+b.dataset.rate;if(window._hvA)window._hvA.playbackRate=esRate;try{localStorage.setItem("studioS.esrate",esRate)}catch(e){}document.querySelectorAll("[data-rate]").forEach(x=>x.setAttribute("aria-pressed",x===b))})}
 const verSel=v=>`<select id="tmver">${tmVersions().map(x=>`<option value="${esc(x.k)}" ${x.k===v.k?"selected":""}>${esc(x.lab)}</option>`).join("")}</select>`;
 const ESR=window.SpeechRecognition||window.webkitSpeechRecognition;let recCur=null;
 function numKor(t){const D=["","일","이","삼","사","오","육","칠","팔","구"],U=["","십","백","천"];
@@ -2031,10 +2031,31 @@ function hvPlay(L,onItem,onEnd){esStop();const g=esGen;let i=0;
     onItem&&onItem(i);const h=L[i],loc=h.l?(/github\.io$/.test(location.hostname)?h.l:"https://yellow8227-cmd.github.io/sangsik/"+h.l):null;const a=new Audio(loc||h.c);let fb=!loc;window._hvA=a;a.playbackRate=esRate;
     a.onended=()=>{if(g!==esGen)return;i++;setTimeout(next,350)};a.onerror=()=>{if(g!==esGen)return;if(!fb){fb=true;a.src=h.c;a.play().catch(()=>{});return}i++;next()};
     a.play().catch(()=>{if(g===esGen&&i===0)alert("음성 파일을 열 수 없어요. 인터넷 연결을 확인하거나 사이트에서 열어 주세요.")})};next()}
+function mp3Frames(u8){let p=0;const fr=[];let spf=1152,sr=0;
+  if(u8[0]===0x49&&u8[1]===0x44&&u8[2]===0x33){p=10+((u8[6]&127)<<21|(u8[7]&127)<<14|(u8[8]&127)<<7|(u8[9]&127))}
+  const BR1=[0,32,40,48,56,64,80,96,112,128,160,192,224,256,320],BR2=[0,8,16,24,32,40,48,56,64,80,96,112,128,144,160];
+  const SR={3:[44100,48000,32000],2:[22050,24000,16000],0:[11025,12000,8000]};
+  let first=true;
+  while(p+4<=u8.length){if(u8[p]!==0xFF||(u8[p+1]&0xE0)!==0xE0){p++;continue}
+    const ver=(u8[p+1]>>3)&3,lay=(u8[p+1]>>1)&3,bi=(u8[p+2]>>4)&15,si=(u8[p+2]>>2)&3,pad=(u8[p+2]>>1)&1;
+    if(ver===1||lay!==1||bi===0||bi===15||si===3){p++;continue}
+    const br=(ver===3?BR1:BR2)[bi]*1000;sr=SR[ver][si];spf=ver===3?1152:576;
+    const len=Math.floor((ver===3?144:72)*br/sr)+pad;if(len<4||p+len>u8.length)break;
+    const f=u8.subarray(p,p+len);
+    if(first){first=false;let s="";for(let k=0;k<Math.min(len,64);k++)s+=String.fromCharCode(f[k]);if(s.includes("Xing")||s.includes("Info")){p+=len;continue}}
+    fr.push(f);p+=len}
+  return {fr,dur:fr.length*spf/(sr||24000)}}
+let hvBlobUrl=null,hvMarks=null;
+async function hvBuild(prog){const parts=[],marks=[];let t=0;
+  try{for(let i=0;i<HV.length;i++){const h=HV[i];prog&&prog(i+1);let ab=null;
+      const loc=h.l?(/github\.io$/.test(location.hostname)?h.l:"https://yellow8227-cmd.github.io/sangsik/"+h.l):null;
+      for(const u of [loc,h.c]){if(!u)continue;try{const r=await fetch(u);if(r.ok){ab=await r.arrayBuffer();break}}catch(e){}}
+      if(!ab)return false;const m=mp3Frames(new Uint8Array(ab));marks.push({t,p:h.p});t+=m.dur;parts.push(...m.fr)}
+    hvBlobUrl=URL.createObjectURL(new Blob(parts,{type:"audio/mpeg"}));hvMarks=marks;return true}catch(e){return false}}
 function renderListen(){const V=tmVersions(),v=V.find(x=>x.k===tmVer)||V[0],P=tmUnits(v.body,"p");let k=0;
   return `<div class="tmtop">${verSel(v)}</div>
    <div class="hint">이어폰 끼고 걷거나 씻으면서 계속 틀어 두세요. 문장을 누르면 거기서부터 읽어요. 익숙해지면 '글 가리기'를 켜고 한 박자 먼저 따라 말해 보세요.</div>
-   <div class="row lsbar">${v.k==="fin"?`<button class="btn primary" id="lshv">🎙 사람 목소리로 듣기</button>`:""}<button class="btn ${v.k==="fin"?"":"primary"}" id="lsplay">${lsPlaying?"⏸ 멈춤":"▶ 처음부터 듣기"}</button><button class="btn small" id="lsloop" aria-pressed="${lsLoop}">${lsLoop?"🔁 반복 켜짐":"🔁 반복"}</button><button class="btn small" id="lshide" aria-pressed="${lsHide}">${lsHide?"📖 글 보이기":"📕 글 가리기"}</button></div>
+   <div class="row lsbar">${v.k==="fin"?`<button class="btn primary" id="lshv">🎙 사람 목소리로 듣기</button><button class="btn small" id="lsdl">📥 MP3 저장</button>`:""}<button class="btn ${v.k==="fin"?"":"primary"}" id="lsplay">${lsPlaying?"⏸ 멈춤":"▶ 처음부터 듣기"}</button><button class="btn small" id="lsloop" aria-pressed="${lsLoop}">${lsLoop?"🔁 반복 켜짐":"🔁 반복"}</button><button class="btn small" id="lshide" aria-pressed="${lsHide}">${lsHide?"📖 글 보이기":"📕 글 가리기"}</button></div>
    <div class="row">${esRates()}</div>
    <div class="lsbody ${lsHide?"lhide":""}">${P.map((p,i)=>`<p data-lp="${i}"><span class="lsn">${i+1}${v.k==="fin"&&PSCENE[i]?" · "+esc(PSCENE[i]):""}</span>${tmSplit(p.t).map(x=>`<span class="lss" data-k="${k++}">${esc(x)}</span>`).join(" ")}</p>`).join("")}</div>`}
 function bindListen(){const V=tmVersions(),v=V.find(x=>x.k===tmVer)||V[0],S=[];tmUnits(v.body,"p").forEach(p=>tmSplit(p.t).forEach(x=>S.push(x)));
@@ -2042,13 +2063,26 @@ function bindListen(){const V=tmVersions(),v=V.find(x=>x.k===tmVer)||V[0],S=[];t
   const start=from=>{const items=S.slice(from);lsPlaying=true;btn.textContent="⏸ 멈춤";
     esPlay(items,i=>{document.querySelectorAll(".lss.esing").forEach(e=>e.classList.remove("esing"));const el=document.querySelector(`.lss[data-k="${from+i}"]`);if(el){el.classList.add("esing");el.scrollIntoView({block:"center",behavior:"smooth"})}},
       ()=>{if(lsLoop)start(0);else{lsPlaying=false;document.querySelectorAll(".esing").forEach(e=>e.classList.remove("esing"));btn.textContent="▶ 처음부터 듣기"}});lsPlaying=true};
-  const hb=$("#lshv");if(hb){const hs=()=>{lsPlaying=true;hb.textContent="⏸ 멈춤";
+  const hb=$("#lshv"),dl=$("#lsdl");
+  const hlAt=t=>{if(!hvMarks)return;let p=hvMarks[0].p;for(const m of hvMarks){if(m.t<=t)p=m.p;else break}
+    const cur=document.querySelector(".lsbody p.esing");if(cur&&+cur.dataset.lp===p)return;document.querySelectorAll(".lsbody p.esing").forEach(e=>e.classList.remove("esing"));
+    const el=document.querySelector(`.lsbody p[data-lp="${p}"]`);if(el){el.classList.add("esing");el.scrollIntoView({block:"center",behavior:"smooth"})}};
+  const reset=()=>{lsPlaying=false;if(hb)hb.textContent="🎙 사람 목소리로 듣기";document.querySelectorAll(".esing").forEach(e=>e.classList.remove("esing"))};
+  const playOne=()=>{esStop();const a=new Audio(hvBlobUrl);window._hvA=a;a.playbackRate=esRate;a.loop=lsLoop;lsPlaying=true;hb.textContent="⏸ 멈춤";
+    a.ontimeupdate=()=>hlAt(a.currentTime);a.onended=()=>{window._hvA=null;reset()};
+    try{if("mediaSession" in navigator){navigator.mediaSession.metadata=new MediaMetadata({title:"확정본 듣기",artist:"작문 외우기"});navigator.mediaSession.setActionHandler("play",()=>a.play());navigator.mediaSession.setActionHandler("pause",()=>a.pause())}}catch(e){}
+    a.play().catch(()=>alert("재생이 막혔어요. 다시 눌러 주세요."))};
+  const fallback=()=>{lsPlaying=true;hb.textContent="⏸ 멈춤";
       hvPlay(HV,i=>{document.querySelectorAll(".lsbody p.esing").forEach(e=>e.classList.remove("esing"));const el=document.querySelector(`.lsbody p[data-lp="${HV[i].p}"]`);if(el){el.classList.add("esing");if(HV[i].p!==(i?HV[i-1].p:-1))el.scrollIntoView({block:"center",behavior:"smooth"})}},
-        ()=>{if(lsLoop)hs();else{lsPlaying=false;hb.textContent="🎙 사람 목소리로 듣기";document.querySelectorAll(".esing").forEach(e=>e.classList.remove("esing"))}})};
-    hb.onclick=()=>{if(window._hvA){esStop();hb.textContent="🎙 사람 목소리로 듣기";document.querySelectorAll(".esing").forEach(e=>e.classList.remove("esing"))}else hs()}}
+        ()=>{if(lsLoop)fallback();else reset()})};
+  if(hb)hb.onclick=async()=>{if(window._hvA){esStop();reset();return}
+    if(!hvBlobUrl){const ok=await hvBuild(n=>{hb.textContent="준비 중… "+n+"/"+HV.length});if(!ok){alert("음성을 한 파일로 합치지 못했어요. 조각으로 이어서 들려 드릴게요(화면을 끄면 멈출 수 있어요).");return fallback()}}
+    playOne()};
+  if(dl)dl.onclick=async()=>{if(!hvBlobUrl){dl.textContent="준비 중…";const ok=await hvBuild(n=>{dl.textContent="준비 중… "+n+"/"+HV.length});dl.textContent="📥 MP3 저장";if(!ok){alert("파일을 만들지 못했어요. 인터넷 연결을 확인하고 사이트에서 다시 해 주세요.");return}}
+    const a=document.createElement("a");a.href=hvBlobUrl;a.download="확정본_낭독.mp3";document.body.appendChild(a);a.click();a.remove()};
   btn.onclick=()=>{if(lsPlaying){esStop();btn.textContent="▶ 처음부터 듣기"}else start(0)};
   document.querySelectorAll(".lss").forEach(e=>e.onclick=()=>{if(lsHide&&!e.classList.contains("peek")){e.classList.add("peek");return}start(+e.dataset.k)});
-  $("#lsloop").onclick=()=>{lsLoop=!lsLoop;const b=$("#lsloop");b.setAttribute("aria-pressed",lsLoop);b.textContent=lsLoop?"🔁 반복 켜짐":"🔁 반복"};
+  $("#lsloop").onclick=()=>{lsLoop=!lsLoop;if(window._hvA)window._hvA.loop=lsLoop;const b=$("#lsloop");b.setAttribute("aria-pressed",lsLoop);b.textContent=lsLoop?"🔁 반복 켜짐":"🔁 반복"};
   $("#lshide").onclick=()=>{lsHide=!lsHide;$(".lsbody").classList.toggle("lhide",lsHide);document.querySelectorAll(".peek").forEach(e=>e.classList.remove("peek"));$("#lshide").textContent=lsHide?"📖 글 보이기":"📕 글 가리기"};
   bindRates();$("#tmver").onchange=e=>{esStop();tmSetVer(e.target.value);renderAnchor()}}
 function renderWeak(){const V=tmVersions(),v=V.find(x=>x.k===tmVer)||V[0];
@@ -6524,4 +6558,4 @@ try{if("speechSynthesis" in window)speechSynthesis.onvoiceschanged=()=>{if(st.mo
 if(st.mode==="news")render();
 
 </script>
-<script src="login.js?v=1791486189995"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
+<script src="login.js?v=1791486541313"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
