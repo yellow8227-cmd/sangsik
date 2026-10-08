@@ -1775,7 +1775,7 @@ const myEdSave=()=>{try{localStorage.setItem(MYE_KEY,JSON.stringify(myEd))}catch
 function masterTabs(){const M=window.EMASTER,T=[];
   if(M.mine){const cs=M.mine.convert||[],fin=cs.find(c=>c.to==="실전 압축본");
     if(fin)T.push({lab:"✅ 확정본",c:fin,base:M.mine,fin:1});
-    T.push({lab:"완성본(외우기용)",m:M.mine,mine:1});/* 지정형(반찬통)은 시험에 잘 안 나와서 목록에서 뺌 */
+    /* 완성본(긴 버전)은 헷갈려서 뺌 — 확정본만 외운다 *//* 지정형(반찬통)은 시험에 잘 안 나와서 목록에서 뺌 */
     (M.mine.kwv||[]).forEach(v=>T.push({lab:"제시어 · "+v.kw,c:{to:v.kw,type:v.type,prompt:v.prompt,title:v.title,body:v.body,changed:v.changed,kept:v.note||"",tip:"뼈대는 확정본 그대로, 위 표의 칸만 바꿨어요."},base:M.mine,kwv:1}))}
   T.push({lab:"예시 틀(우산)",m:M.master});M.convert.forEach(c=>T.push({lab:"→ "+c.to,c,base:M.master}));return T}
 function esPrint(lab,body){let d=document.getElementById("printone");if(!d){d=document.createElement("div");d.id="printone";document.body.appendChild(d)}
@@ -1849,7 +1849,7 @@ const TM_MIG={"fin": [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
   tmPos._m4=1;try{localStorage.setItem(TM_KEY,JSON.stringify(tmSt));localStorage.setItem(TD_KEY,JSON.stringify(tmDr));localStorage.setItem(TMM_KEY,JSON.stringify(tmMiss));localStorage.setItem(TP_KEY,JSON.stringify(tmPos))}catch(e){}})();
 const tmSetVer=k=>{tmVer=k;tmPos._ver=k;tmPosSave();tmCur=null;pcCur=null};
 function tmVersions(){const M=window.EMASTER,m=M.mine,L=[];const fin=(m.convert||[]).find(c=>c.to==="실전 압축본");
-  if(fin)L.push({k:"fin",lab:"확정본",body:fin.body});L.push({k:"full",lab:"완성본(긴 버전)",body:m.body});
+  if(fin)L.push({k:"fin",lab:"확정본",body:fin.body});
   (m.kwv||[]).forEach(v=>L.push({k:"kw:"+v.kw,lab:v.kw,body:v.body}));return L}
 function tmSplit(par){const out=[];let cur="",dq=false;const t=par.trim();
   for(let i=0;i<t.length;i++){const c=t[i];cur+=c;if(c==='"'||c==="“"||c==="”")dq=!dq;
@@ -6450,4 +6450,4 @@ try{if("speechSynthesis" in window)speechSynthesis.onvoiceschanged=()=>{if(st.mo
 if(st.mode==="news")render();
 
 </script>
-<script src="login.js?v=1791438979062"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
+<script src="login.js?v=1791439122753"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
