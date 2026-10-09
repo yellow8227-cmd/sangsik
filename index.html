@@ -5504,9 +5504,9 @@ Object.keys(F).forEach(key=>{const [k,i]=key.split(":").map(Number),q=EXAMS[k]&&
 })();
 // @@exfix end
 (function(){const F=window.OPTFIX||{};EXAMS.forEach(e=>e.qs.forEach(q=>{if(q.t!=="mc")return;const f=F[q.q+"|"+q.o[0]];if(!f)return;q.o=q.o.map((o,i)=>i&&f[o]?f[o][0]:o)}));})();
-const NOT="아닌 것 찾기";
+const NOT="아닌 것 찾기";const NB="🏅 2026 노벨";const isNb=d=>d[1]==="nobel26";
 const isNot=d=>/아닌|못한|않은|옳지 않은|틀린 것/.test(d[2]);
-const CATS=["전체",NOT,...[...new Set(D.map(d=>d[0]))]];
+const CATS=["전체",NB,NOT,...[...new Set(D.map(d=>d[0]))]];
 const KEY="studioS.v1";
 let st={mode:"card",cat:"전체",wrong:[],known:[]};
 try{Object.assign(st,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){}
@@ -5516,7 +5516,7 @@ const id=d=>d[2]+"|"+d[3];
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
-const pool=()=>st.cat==="전체"?D:st.cat===NOT?D.filter(isNot):D.filter(d=>d[0]===st.cat);
+const pool=()=>st.cat==="전체"?D:st.cat===NB?D.filter(isNb):st.cat===NOT?D.filter(isNot):D.filter(d=>d[0]===st.cat);
 // @@smart start · 내 기록으로 문제 고르기(처음 보는 문제·틀린 문제·복습할 때 된 문제 먼저, 잘 맞힌 건 뒤로, 같은 유형 연속 X)
 const SEEN_KEY="studioS.seen";let SEEN={};
 try{SEEN=JSON.parse(localStorage.getItem(SEEN_KEY)||"{}")||{}}catch(e){}
@@ -5603,7 +5603,7 @@ function stats(){
 function chips(){
   const c=$("#chips");
   c.hidden=!["card","quiz"].includes(st.mode);
-  c.innerHTML=CATS.map(k=>`<button class="chip" data-cat="${esc(k)}" aria-pressed="${k===st.cat}">${esc(k)}<small>${k==="전체"?D.length:k===NOT?D.filter(isNot).length:D.filter(d=>d[0]===k).length}</small></button>`).join("");
+  c.innerHTML=CATS.map(k=>`<button class="chip" data-cat="${esc(k)}" aria-pressed="${k===st.cat}">${esc(k)}<small>${k==="전체"?D.length:k===NB?D.filter(isNb).length:k===NOT?D.filter(isNot).length:D.filter(d=>d[0]===k).length}</small></button>`).join("");
 }
 function tabs(){document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===st.mode))}
 
@@ -6576,4 +6576,4 @@ try{if("speechSynthesis" in window)speechSynthesis.onvoiceschanged=()=>{if(st.mo
 if(st.mode==="news")render();
 
 </script>
-<script src="login.js?v=1791547123039"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
+<script src="login.js?v=1791548082301"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
