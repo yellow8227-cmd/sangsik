@@ -1,0 +1,23 @@
+name: tts
+on:
+  workflow_dispatch:
+  push:
+    paths: ['audio/tts/text.json']
+permissions:
+  contents: write
+jobs:
+  tts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - run: pip install edge-tts==7.0.2
+      - run: python .github/scripts/tts.py
+      - name: Commit
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add audio/tts
+          git diff --cached --quiet || (git commit -m "audio: 확정본 낭독 MP3 생성" && git pull --rebase && git push)
