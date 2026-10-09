@@ -1974,7 +1974,7 @@ function ancCards(){const m=window.EMASTER.mine,L=[];
 function ancHint(t){const w=t.replace(/\n/g," ").split(" ");return w.slice(0,Math.min(2,w.length)).join(" ")+" …"}
 function sim(a,b){const g=s=>{s=s.replace(/[\s"'“”‘’.,…!?·]/g,"");const S=new Set();for(let i=0;i<s.length-1;i++)S.add(s.slice(i,i+2));return S};const A=g(a),B=g(b);if(!A.size||!B.size)return 0;let n=0;A.forEach(x=>{if(B.has(x))n++});return n/Math.max(A.size,B.size)}
 const PSCENE=["벽 너머 소리 · 고독사","나 · 취준 3년 · 엄마 문자","주방 · 공책 · 귀가 빨개짐","노인의 부탁 · 성우 자랑","토요일 · 손녀 전화","막힘없는 낭독 · 면접 회상","기억이 흐려짐 · 요양원","원장 · 쪽지 · CD","요양원 · 이번엔 내가","버스 · 엄마 전화 · 새 파일"];
-let pcI=0,pcShow=0,lsHide=false,lsLoop=false,lsPlaying=false;
+let pcI=0,pcShow=0,lsHide=false,lsLoop=true,lsPlaying=false;
 let esRate=1;try{esRate=+localStorage.getItem("studioS.esrate")||1}catch(e){}
 const esOK=()=>typeof speechSynthesis!=="undefined";
 function esVoice(){const vs=speechSynthesis.getVoices();return vs.find(v=>/^ko/i.test(v.lang)&&/google|yuna|heami|sunhi|injoon/i.test(v.name))||vs.find(v=>/^ko/i.test(v.lang))}
@@ -2025,7 +2025,7 @@ function bindParCard(){const V=tmVersions(),v=V.find(x=>x.k===tmVer)||V[0],U=tmU
   if($("#pccho"))$("#pccho").onclick=()=>{pcShow=1;renderAnchor()};
   if($("#pcyes"))$("#pcyes").onclick=()=>{if(pcShow===4&&pcRes)tmMark(v.k+"|pc",pcI,pcRes,true);ancSt[id(pcI)]=(ancSt[id(pcI)]||0)+1;ancSave();nextOpen()};
   if($("#pcno"))$("#pcno").onclick=()=>{tmMark(v.k+"|pc",pcI,pcShow===4?pcRes:null,false);ancSt[id(pcI)]=0;ancSave();nextOpen()};
-  $("#pcsay").onclick=()=>{const H=v.k==="fin"?HV.filter(h=>h.p===pcI):[];if(H.length)hvPlay(H);else esPlay(tmSplit(u.t))};bindRates();
+  $("#pcsay").onclick=()=>{if(v.k==="fin")hvPlay([{p:pcI,l:"audio/tts/p"+pcI+".mp3?v="+ESMP.h,c:ESMPB+"audio/tts/p"+pcI+".mp3?v="+ESMP.h}]);else esPlay(tmSplit(u.t))};bindRates();
   $("#pcprev").onclick=()=>go(-1);$("#pcnext").onclick=()=>go(1);
   $("#pcreset1").onclick=()=>{delete ancSt[id(pcI)];ancSave();pcShow=0;renderAnchor()};
   $("#pcreset").onclick=()=>{if(confirm("⚠ 이 글의 문단 카드 기록을 처음부터 전부 지울까요?")){U.forEach((x,i)=>delete ancSt[id(i)]);ancSave();pcI=0;pcPos();pcShow=0;renderAnchor()}};
@@ -2050,6 +2050,7 @@ function mp3Frames(u8){let p=0;const fr=[];let spf=1152,sr=0;
     if(first){first=false;let s="";for(let k=0;k<Math.min(len,64);k++)s+=String.fromCharCode(f[k]);if(s.includes("Xing")||s.includes("Info")){p+=len;continue}}
     fr.push(f);p+=len}
   return {fr,dur:fr.length*spf/(sr||24000)}}
+const ESMP={"h": "424e358ab7", "st": [0, 45.58, 68.42, 111.58, 152.16, 175.97, 215.04, 269.81, 312.05, 337.58], "tot": 378.07};const ESMPB="https://yellow8227-cmd.github.io/sangsik/";const esmpU=f=>(/github\.io$/.test(location.hostname)?"":ESMPB)+"audio/tts/"+f+"?v="+ESMP.h;let lsTimer=120,lsT0=0;
 let hvBlobUrl=null,hvMarks=null;
 async function hvBuild(prog){const parts=[],marks=[];let t=0;
   try{for(let i=0;i<HV.length;i++){const h=HV[i];prog&&prog(i+1);let ab=null;
@@ -2059,8 +2060,8 @@ async function hvBuild(prog){const parts=[],marks=[];let t=0;
     hvBlobUrl=URL.createObjectURL(new Blob(parts,{type:"audio/mpeg"}));hvMarks=marks;return true}catch(e){return false}}
 function renderListen(){const V=tmVersions(),v=V.find(x=>x.k===tmVer)||V[0],P=tmUnits(v.body,"p");let k=0;
   return `<div class="tmtop">${verSel(v)}</div>
-   <div class="hint">이어폰 끼고 걷거나 씻으면서 계속 틀어 두세요. 문장을 누르면 거기서부터 읽어요. 익숙해지면 '글 가리기'를 켜고 한 박자 먼저 따라 말해 보세요.</div>
-   <div class="row lsbar">${v.k==="fin"?`<button class="btn primary" id="lshv">🎙 사람 목소리로 듣기</button><button class="btn small" id="lsdl">📥 MP3 저장</button>`:""}<button class="btn ${v.k==="fin"?"":"primary"}" id="lsplay">${lsPlaying?"⏸ 멈춤":"▶ 처음부터 듣기"}</button><button class="btn small" id="lsloop" aria-pressed="${lsLoop}">${lsLoop?"🔁 반복 켜짐":"🔁 반복"}</button><button class="btn small" id="lshide" aria-pressed="${lsHide}">${lsHide?"📖 글 보이기":"📕 글 가리기"}</button></div>
+   <div class="hint">🎧 MP3로 듣기는 화면을 끄거나 다른 앱을 써도 계속 나와요. 반복을 켜면 정해 둔 시간(기본 2시간)만큼 돌아요. 아래 ▶ 버튼은 기기 음성으로 읽어요(문장을 누르면 거기서부터). 익숙해지면 '글 가리기'를 켜고 한 박자 먼저 따라 말해 보세요.</div>
+   <div class="row lsbar">${v.k==="fin"?`<button class="btn primary" id="lshv">🎧 MP3로 듣기</button><button class="btn small" id="lsdl">📥 MP3 저장</button>`:""}<button class="btn ${v.k==="fin"?"":"primary"}" id="lsplay">${lsPlaying?"⏸ 멈춤":"▶ 처음부터 듣기"}</button><button class="btn small" id="lsloop" aria-pressed="${lsLoop}">${lsLoop?"🔁 반복 켜짐":"🔁 반복"}</button>${v.k==="fin"?`<button class="btn small" id="lstimer">⏱ ${lsTimer?lsTimer>=60?lsTimer/60+"시간":lsTimer+"분":"계속"}</button>`:""}<button class="btn small" id="lshide" aria-pressed="${lsHide}">${lsHide?"📖 글 보이기":"📕 글 가리기"}</button></div>
    <div class="row">${esRates()}</div>
    <div class="lsbody ${lsHide?"lhide":""}">${P.map((p,i)=>`<p data-lp="${i}"><span class="lsn">${i+1}${v.k==="fin"&&PSCENE[i]?" · "+esc(PSCENE[i]):""}</span>${tmSplit(p.t).map(x=>`<span class="lss" data-k="${k++}">${esc(x)}</span>`).join(" ")}</p>`).join("")}</div>`}
 function bindListen(){const V=tmVersions(),v=V.find(x=>x.k===tmVer)||V[0],S=[];tmUnits(v.body,"p").forEach(p=>tmSplit(p.t).forEach(x=>S.push(x)));
@@ -2072,19 +2073,19 @@ function bindListen(){const V=tmVersions(),v=V.find(x=>x.k===tmVer)||V[0],S=[];t
   const hlAt=t=>{if(!hvMarks)return;let p=hvMarks[0].p;for(const m of hvMarks){if(m.t<=t)p=m.p;else break}
     const cur=document.querySelector(".lsbody p.esing");if(cur&&+cur.dataset.lp===p)return;document.querySelectorAll(".lsbody p.esing").forEach(e=>e.classList.remove("esing"));
     const el=document.querySelector(`.lsbody p[data-lp="${p}"]`);if(el){el.classList.add("esing");el.scrollIntoView({block:"center",behavior:"smooth"})}};
-  const reset=()=>{lsPlaying=false;if(hb)hb.textContent="🎙 사람 목소리로 듣기";document.querySelectorAll(".esing").forEach(e=>e.classList.remove("esing"))};
+  const reset=()=>{lsPlaying=false;if(hb)hb.textContent="🎧 MP3로 듣기";document.querySelectorAll(".esing").forEach(e=>e.classList.remove("esing"))};
   const playOne=()=>{esStop();const a=window._hvPre||new Audio();window._hvPre=null;try{a.pause()}catch(e){}a.muted=false;a.src=hvBlobUrl;window._hvA=a;a.playbackRate=esRate;a.loop=lsLoop;lsPlaying=true;hb.textContent="⏸ 멈춤";
-    a.ontimeupdate=()=>hlAt(a.currentTime);a.onended=()=>{window._hvA=null;reset()};
+    lsT0=Date.now();a.ontimeupdate=()=>{hlAt(a.currentTime);if(a.loop&&lsTimer&&Date.now()-lsT0>lsTimer*60000){esStop();reset()}};a.onended=()=>{window._hvA=null;reset()};
     try{if("mediaSession" in navigator){navigator.mediaSession.metadata=new MediaMetadata({title:"확정본 듣기",artist:"작문 외우기"});navigator.mediaSession.setActionHandler("play",()=>a.play());navigator.mediaSession.setActionHandler("pause",()=>a.pause())}}catch(e){}
     a.play().catch(()=>alert("재생이 막혔어요. 다시 눌러 주세요."))};
   const fallback=()=>{lsPlaying=true;hb.textContent="⏸ 멈춤";
       hvPlay(HV,i=>{document.querySelectorAll(".lsbody p.esing").forEach(e=>e.classList.remove("esing"));const el=document.querySelector(`.lsbody p[data-lp="${HV[i].p}"]`);if(el){el.classList.add("esing");if(HV[i].p!==(i?HV[i-1].p:-1))el.scrollIntoView({block:"center",behavior:"smooth"})}},
         ()=>{if(lsLoop)fallback();else reset()})};
-  if(hb)hb.onclick=async()=>{if(window._hvA){esStop();reset();return}
-    if(!hvBlobUrl){try{const pre=new Audio((/github\.io$/.test(location.hostname)?"":"https://yellow8227-cmd.github.io/sangsik/")+HV[0].l);pre.muted=true;window._hvPre=pre;pre.play().catch(()=>{})}catch(e){}const ok=await hvBuild(n=>{hb.textContent="준비 중… "+n+"/"+HV.length});if(!ok){alert("음성을 한 파일로 합치지 못했어요. 조각으로 이어서 들려 드릴게요(화면을 끄면 멈출 수 있어요).");return fallback()}}
+  if(hb)hb.onclick=()=>{if(window._hvA){esStop();reset();return}
+    if(!hvBlobUrl){hvBlobUrl=esmpU("full.mp3");hvMarks=ESMP.st.map((t,p)=>({t,p}))}
     playOne()};
-  if(dl)dl.onclick=async()=>{if(!hvBlobUrl){dl.textContent="준비 중…";const ok=await hvBuild(n=>{dl.textContent="준비 중… "+n+"/"+HV.length});dl.textContent="📥 MP3 저장";if(!ok){alert("파일을 만들지 못했어요. 인터넷 연결을 확인하고 사이트에서 다시 해 주세요.");return}}
-    const a=document.createElement("a");a.href=hvBlobUrl;a.download="확정본_낭독.mp3";document.body.appendChild(a);a.click();a.remove()};
+  if(dl)dl.onclick=()=>{const a=document.createElement("a");a.href=esmpU("full.mp3");a.download="확정본_낭독.mp3";a.target="_blank";document.body.appendChild(a);a.click();a.remove()};
+  if($("#lstimer"))$("#lstimer").onclick=()=>{const O=[30,60,120,0];lsTimer=O[(O.indexOf(lsTimer)+1)%O.length];lsT0=Date.now();const b=$("#lstimer");b.textContent="⏱ "+(lsTimer?lsTimer>=60?lsTimer/60+"시간":lsTimer+"분":"계속")};
   btn.onclick=()=>{if(lsPlaying){esStop();btn.textContent="▶ 처음부터 듣기"}else start(0)};
   document.querySelectorAll(".lss").forEach(e=>e.onclick=()=>{if(lsHide&&!e.classList.contains("peek")){e.classList.add("peek");return}start(+e.dataset.k)});
   $("#lsloop").onclick=()=>{lsLoop=!lsLoop;if(window._hvA)window._hvA.loop=lsLoop;const b=$("#lsloop");b.setAttribute("aria-pressed",lsLoop);b.textContent=lsLoop?"🔁 반복 켜짐":"🔁 반복"};
@@ -6604,4 +6605,4 @@ try{if("speechSynthesis" in window)speechSynthesis.onvoiceschanged=()=>{if(st.mo
 if(st.mode==="news")render();
 
 </script>
-<script src="login.js?v=1791551103028"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
+<script src="login.js?v=1791570255387"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
