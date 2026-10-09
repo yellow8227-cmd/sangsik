@@ -1937,7 +1937,7 @@ function renderTypeMem(mode){const V=tmVersions(),v=V.find(x=>x.k===tmVer)||V[0]
       <div class="hint">원문 (빨간 부분 = 원문과 다른 곳)</div><div class="tmorig">${tmRes.diff.html}</div>
       ${(()=>{const r=(tmMiss[key]||{})[tmI],w=r&&r.w?Object.entries(r.w).filter(x=>x[1]>=2).sort((a,b)=>b[1]-a[1]).slice(0,6):[];return w.length?`<div class="hint">🔥 자주 빠뜨리는 말: <b>${w.map(x=>esc(x[0])+" ×"+x[1]).join(", ")}</b></div>`:""})()}
       ${tmRes.diff.extra.length?`<div class="hint">내가 다르게 쓴 말: <s>${tmRes.diff.extra.map(esc).join(" ")}</s></div>`:""}${typeof sampleFn!=="undefined"&&sampleFn?`<div class="row"><button class="btn small" id="tmai">🤖 AI 코멘트 받기</button></div><div class="easy" id="tmaiout" hidden></div>`:""}</div>`:""}
-   <div class="row"><button class="btn" id="tmprevb" ${tmI||tmWeak?"":"disabled"}>← 이전</button><button class="btn" id="tmnext">${tmRes&&tmRes.sc>=need?"다음 →":"넘기기 →"}</button></div><div class="row"><button class="btn small" id="tmclear">✕ 지우고 다시 쓰기</button><button class="btn small" id="tmreset1">이 ${mode==="s"?"문장":"문단"}만 초기화</button><button class="btn small danger" id="tmreset">🗑 이 글 전체 초기화</button></div>
+   <div class="row"><button class="btn" id="tmprevb" ${tmI||tmWeak?"":"disabled"}>← 이전</button><button class="btn" id="tmnext">${tmRes&&tmRes.sc>=need?"다음 →":"넘기기 →"}</button></div><div class="row"><button class="btn small" id="tmclear">✕ 지우고 다시 쓰기</button><button class="btn small" id="tmreset1">이 ${mode==="s"?"문장":"문단"}만 초기화</button>${mode==="s"?`<button class="btn small" id="tmresetp">${u.p+1}문단 전체 초기화</button>`:""}<button class="btn small danger" id="tmreset">🗑 이 글 전체 초기화</button></div>
    <div class="hint">${mode==="s"?`뜻이 맞으면 통과예요. 따옴표 대사·쪽지·밥 대사 같은 핵심 문장만 그대로 쓰면 돼요. 다 통과하면 '한 문단 쓰기'로 넘어가세요.`:`뜻이 맞으면 통과예요. 핵심 대사만 그대로 쓰면 돼요.`}</div>`}
 function bindTypeMem(mode){const V=tmVersions(),v=V.find(x=>x.k===tmVer)||V[0],U=tmUnits(v.body,mode),key=v.k+"|"+mode,u=U[tmI];const need=90;
   const ta=$("#tmin");ta.oninput=()=>{tmDraft=ta.value;const D=tmDr[key]||(tmDr[key]={});D[tmI]={x:ta.value,g:0};tmDrSave()};if(!tmRes)setTimeout(()=>ta.focus(),0);
@@ -1952,8 +1952,9 @@ function bindTypeMem(mode){const V=tmVersions(),v=V.find(x=>x.k===tmVer)||V[0],U
   document.querySelectorAll("[data-tmj]").forEach(c=>c.onclick=()=>{const p=+c.dataset.tmj;let n=U.findIndex((x,i)=>x.p===p&&tmWeak&&tmF(key,i));if(n<0){n=U.findIndex(x=>x.p===p);if(tmWeak){tmWeak=false;tmPos._weak=0}}tmPos[key]=n;tmPosSave();tmCur=null;renderAnchor()});
   $("#tmprevb").onclick=()=>move(-1);$("#tmnext").onclick=()=>{if(tmWeak)return move(1);if(tmI>=U.length-1){tmPos[key]=0;tmPosSave();tmCur=null;renderAnchor()}else move(1)};
   $("#tmclear").onclick=()=>{if(tmDr[key])delete tmDr[key][tmI];tmDrSave(1);tmDraft="";tmRes=null;tmShow=0;renderAnchor()};
-  $("#tmreset1").onclick=()=>{if(!confirm("이 "+(mode==="s"?"문장":"문단")+"의 통과 기록과 쓴 글만 지울까요? (다른 "+(mode==="s"?"문장":"문단")+"은 그대로예요)"))return;if(tmSt[key])delete tmSt[key][tmI];tmSave();if(tmDr[key])delete tmDr[key][tmI];tmDrSave(1);tmDraft="";tmRes=null;tmShow=0;renderAnchor()};
-  $("#tmreset").onclick=()=>{if(confirm("⚠ 이 글의 "+(mode==="s"?"한 줄 쓰기":"한 문단 쓰기")+" 기록을 처음부터 전부 지울까요? 통과 기록·쓴 글·위치가 다 사라져요.")){delete tmSt[key];tmSave();delete tmDr[key];tmDrSave(1);delete tmPos[key];tmPosSave();tmCur=null;renderAnchor()}};
+  if($("#tmresetp"))$("#tmresetp").onclick=()=>{const ix=U.map((x,i)=>x.p===u.p?i:-1).filter(i=>i>=0);if(!confirm((u.p+1)+"문단 "+ix.length+"문장의 통과 기록과 쓴 글을 지우고 이 문단 처음부터 다시 할까요?\n(🔥 약점 노트의 틀린 기록은 그대로 남아요)"))return;ix.forEach(i=>{if(tmSt[key])delete tmSt[key][i];if(tmDr[key])delete tmDr[key][i]});tmSave();tmDrSave(1);tmPos[key]=ix[0];tmPosSave();tmCur=null;renderAnchor()};
+  $("#tmreset1").onclick=()=>{if(!confirm("이 "+(mode==="s"?"문장":"문단")+"의 통과 기록과 쓴 글만 지울까요? (다른 "+(mode==="s"?"문장":"문단")+"은 그대로, 🔥 약점 노트의 틀린 기록도 그대로 남아요)"))return;if(tmSt[key])delete tmSt[key][tmI];tmSave();if(tmDr[key])delete tmDr[key][tmI];tmDrSave(1);tmDraft="";tmRes=null;tmShow=0;renderAnchor()};
+  $("#tmreset").onclick=()=>{if(confirm("⚠ 이 글의 "+(mode==="s"?"한 줄 쓰기":"한 문단 쓰기")+" 기록을 처음부터 전부 지울까요? 통과 기록·쓴 글·위치가 다 사라져요. (🔥 약점 노트의 틀린 기록은 그대로 남아요)")){delete tmSt[key];tmSave();delete tmDr[key];tmDrSave(1);delete tmPos[key];tmPosSave();tmCur=null;renderAnchor()}};
   $("#tmver").onchange=e=>{tmSetVer(e.target.value);renderAnchor()}}
 let ancTab=tmPos._tab!=null?+tmPos._tab:6,ancI=0,ancShow=false;
 const ANC_KEY="studioS.anchor";let ancSt={};try{ancSt=JSON.parse(localStorage.getItem(ANC_KEY)||"{}")||{}}catch(e){}
@@ -6560,4 +6561,4 @@ try{if("speechSynthesis" in window)speechSynthesis.onvoiceschanged=()=>{if(st.mo
 if(st.mode==="news")render();
 
 </script>
-<script src="login.js?v=1791524398127"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
+<script src="login.js?v=1791526904464"></script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></html>
