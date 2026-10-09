@@ -2,7 +2,7 @@ name: tts
 on:
   workflow_dispatch:
   push:
-    paths: ['audio/tts/text.json']
+    paths: ['audio/tts/text.json','audio/tts/stamp.txt','.github/workflows/tts.yml','.github/scripts/tts.py']
 permissions:
   contents: write
 jobs:
@@ -13,8 +13,8 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
-      - run: pip install edge-tts==7.0.2
-      - run: python .github/scripts/tts.py
+      - run: pip install edge-tts
+      - run: python .github/scripts/tts.py > audio/tts/log.txt 2>&1 || (echo FAILED >> audio/tts/log.txt)
       - name: Commit
         run: |
           git config user.name "github-actions"
